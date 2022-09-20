@@ -156,7 +156,7 @@ func TestStrGo_MayContainWordsOnce(t *testing.T) {
 
 func TestUsername(t *testing.T) {
 	/*
-		- `username` may only contain alphanumeric characters, underscores and periods
+		- `username` can only contain alphanumeric characters, underscores and periods
 		- its length must be greater than 2 and not more than 20
 		- special character must be followed by at least one alphanumeric character
 		- prefix and suffix cannot be a special character
