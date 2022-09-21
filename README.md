@@ -68,6 +68,45 @@ validate("joh_nd_oe") // not valid
 validate("joh.nd.oe") // not valid
 ```
 
+...and this is an example to validate an `email` string:
+
+- `email` can only contain alphanumeric characters and these special characters: `_.-@+`
+- its length must be greater than 3 and not more than 255
+- special character must be followed by at least one alphanumeric character
+- prefix and suffix cannot be a special character
+- must contain char `@` and must be appeared once in the string
+
+```go
+var validate = func(email string) error {
+    return strgo.New(email).
+        MinLength(4).
+        MaxLength(255).
+        OnlyContainChars(strgo.ALPHANUMERIC).
+        OnlyContainChars([]string{"_", ".", "@", "-", "+"}).
+        MustBeFollowedByChars([]string{"_", ".", "@", "-", "+"}, strgo.ALPHANUMERIC).
+        MustNotContainPrefixChars([]string{"_", ".", "@", "-", "+"}).
+        MustNotContainSuffixChars([]string{"_", ".", "@", "-", "+"}).
+        MustContainCharsOnce([]string{"@"}).
+        Validate()
+}
+err := validate("johndoe@email.com") // valid
+err = validate("john_doe@email.com") // valid
+err = validate("john_do.e@email.com") // valid
+err = validate("john-doe@email.com") // valid
+err = validate("johndoe@email") // valid
+err = validate("johndoe123@email") // valid
+err = validate("johndoe123@email") // valid
+err = validate("john+doe123@email") // valid
+err = validate("johndoe123email") // not valid
+err = validate("johndoe123.email") // not valid
+err = validate("john@doe123@email") // not valid
+err = validate(".johndoe123@email") // not valid
+err = validate("johndoe123@email.") // not valid
+err = validate("johndoe123@") // not valid
+err = validate("john_.doe123@email") // not valid
+err = validate("johndoe123.@email") // not valid
+```
+
 ## Release
 
 ### Changelog

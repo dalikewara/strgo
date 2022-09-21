@@ -60,6 +60,22 @@ func TestStrGo_OnlyContainSuffixChars(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainSuffixChars, "e"))
 }
 
+func TestStrGo_OnlyContainPrefixWords(t *testing.T) {
+	err := strgo.New("johndoe").OnlyContainPrefixWords([]string{"hn", "joh"}).Validate()
+	assert.Nil(t, err)
+	err = strgo.New("johndoe").OnlyContainPrefixWords([]string{"noh", "koh"}).Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainPrefixWords, "[noh koh]"))
+}
+
+func TestStrGo_OnlyContainSuffixWords(t *testing.T) {
+	err := strgo.New("johndoe").OnlyContainSuffixWords([]string{"eo", "oe"}).Validate()
+	assert.Nil(t, err)
+	err = strgo.New("johndoe").OnlyContainSuffixWords([]string{"ne", "ho"}).Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainSuffixWords, "[ne ho]"))
+}
+
 func TestStrGo_MustContainChars(t *testing.T) {
 	err := strgo.New("johndoe").MustContainChars([]string{"n", "h"}).Validate()
 	assert.Nil(t, err)
@@ -128,6 +144,22 @@ func TestStrGo_MustNotContainSuffixChars(t *testing.T) {
 	err = strgo.New("johndoe").MustNotContainSuffixChars([]string{"o", "e"}).Validate()
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainSuffixChars, "e"))
+}
+
+func TestStrGo_MustNotContainPrefixWords(t *testing.T) {
+	err := strgo.New("johndoe").MustNotContainPrefixWords([]string{"hn", "koh"}).Validate()
+	assert.Nil(t, err)
+	err = strgo.New("johndoe").MustNotContainPrefixWords([]string{"noh", "joh"}).Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainPrefixWords, "joh"))
+}
+
+func TestStrGo_MustNotContainSuffixWords(t *testing.T) {
+	err := strgo.New("johndoe").MustNotContainSuffixWords([]string{"eo", "ode"}).Validate()
+	assert.Nil(t, err)
+	err = strgo.New("johndoe").MustNotContainSuffixWords([]string{"doe", "joh"}).Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainSuffixWords, "doe"))
 }
 
 func TestStrGo_MustBeFollowedByChars(t *testing.T) {
@@ -224,5 +256,59 @@ func TestUsername(t *testing.T) {
 	err = validate("joh_nd_oe")
 	assert.NotNil(t, err)
 	err = validate("joh.nd.oe")
+	assert.NotNil(t, err)
+}
+
+func TestEmail(t *testing.T) {
+	/*
+		- `email` can only contain alphanumeric characters and these special characters: _.-@+
+		- its length must be greater than 3 and not more than 255
+		- special character must be followed by at least one alphanumeric character
+		- prefix and suffix cannot be a special character
+		- must contain char @ and must be appeared once in the string
+	*/
+	var validate = func(email string) error {
+		return strgo.New(email).
+			MinLength(4).
+			MaxLength(255).
+			OnlyContainChars(strgo.ALPHANUMERIC).
+			OnlyContainChars([]string{"_", ".", "@", "-", "+"}).
+			MustBeFollowedByChars([]string{"_", ".", "@", "-", "+"}, strgo.ALPHANUMERIC).
+			MustNotContainPrefixChars([]string{"_", ".", "@", "-", "+"}).
+			MustNotContainSuffixChars([]string{"_", ".", "@", "-", "+"}).
+			MustContainCharsOnce([]string{"@"}).
+			Validate()
+	}
+	err := validate("johndoe@email.com")
+	assert.Nil(t, err)
+	err = validate("john_doe@email.com")
+	assert.Nil(t, err)
+	err = validate("john_do.e@email.com")
+	assert.Nil(t, err)
+	err = validate("john-doe@email.com")
+	assert.Nil(t, err)
+	err = validate("johndoe@email")
+	assert.Nil(t, err)
+	err = validate("johndoe123@email")
+	assert.Nil(t, err)
+	err = validate("johndoe123@email")
+	assert.Nil(t, err)
+	err = validate("john+doe123@email")
+	assert.Nil(t, err)
+	err = validate("johndoe123email")
+	assert.NotNil(t, err)
+	err = validate("johndoe123.email")
+	assert.NotNil(t, err)
+	err = validate("john@doe123@email")
+	assert.NotNil(t, err)
+	err = validate(".johndoe123@email")
+	assert.NotNil(t, err)
+	err = validate("johndoe123@email.")
+	assert.NotNil(t, err)
+	err = validate("johndoe123@")
+	assert.NotNil(t, err)
+	err = validate("john_.doe123@email")
+	assert.NotNil(t, err)
+	err = validate("johndoe123.@email")
 	assert.NotNil(t, err)
 }

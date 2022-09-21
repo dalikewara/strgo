@@ -12,6 +12,10 @@ const ErrOnlyContainPrefixChars = "the given string can not contain prefix char:
 
 const ErrOnlyContainSuffixChars = "the given string can not contain suffix char: %s"
 
+const ErrOnlyContainPrefixWords = "the given string must contain at least one of these prefix: %s"
+
+const ErrOnlyContainSuffixWords = "the given string must contain at least one of these suffix: %s"
+
 const ErrMustContainChars = "the given string must contain char: %s"
 
 const ErrMustContainWords = "the given string must contain word: %s"
@@ -23,6 +27,10 @@ const ErrMustNotContainWords = "the given string must not contain word: %s"
 const ErrMustNotContainPrefixChars = "the given string must not contain prefix: %s"
 
 const ErrMustNotContainSuffixChars = "the given string must not contain suffix: %s"
+
+const ErrMustNotContainPrefixWords = "the given string must not contain prefix: %s"
+
+const ErrMustNotContainSuffixWords = "the given string must not contain suffix: %s"
 
 const ErrMustBeFollowedByChars = "the char: %s, must be followed with at least one of these characters: %v"
 

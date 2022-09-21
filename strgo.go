@@ -31,6 +31,14 @@ type StrGo interface {
 	// from the given `sc` and will be evaluated when Validate is called.
 	OnlyContainSuffixChars(sc []string) StrGo
 
+	// OnlyContainPrefixWords sets condition that the string can only contain prefix words
+	// from the given `pw` and will be evaluated when Validate is called.
+	OnlyContainPrefixWords(pw []string) StrGo
+
+	// OnlyContainSuffixWords sets condition that the string can only contain suffix words
+	// from the given `sw` and will be evaluated when Validate is called.
+	OnlyContainSuffixWords(sw []string) StrGo
+
 	// MustContainChars sets condition that the string must contain characters
 	// from the given `c` and will be evaluated when Validate is called.
 	MustContainChars(c []string) StrGo
@@ -65,6 +73,14 @@ type StrGo interface {
 	// from the given `sc` and will be evaluated when Validate is called.
 	MustNotContainSuffixChars(sc []string) StrGo
 
+	// MustNotContainPrefixWords sets condition that the string must not contain prefix words
+	// from the given `pw` and will be evaluated when Validate is called.
+	MustNotContainPrefixWords(pw []string) StrGo
+
+	// MustNotContainSuffixWords sets condition that the string must not contain suffix words
+	// from the given `sw` and will be evaluated when Validate is called.
+	MustNotContainSuffixWords(sw []string) StrGo
+
 	// MustBeFollowedByChars sets condition that the given characters `c` in the string must be followed by
 	// at least one of the characters from the given `fc` and will be evaluated when Validate is called.
 	MustBeFollowedByChars(c, fc []string) StrGo
@@ -89,8 +105,6 @@ type strGo struct {
 	onlyContainPrefixChars    map[string]string
 	onlyContainSuffixChars    map[string]string
 	mustContainChars          map[string]string
-	mustContainWords          map[string]string
-	mustNotContainWords       map[string]string
 	mustNotContainChars       map[string]string
 	mustNotContainPrefixChars map[string]string
 	mustNotContainSuffixChars map[string]string
@@ -98,7 +112,7 @@ type strGo struct {
 	mustBeFollowedByCharsF    map[string]string
 	mustBeFollowedByCharsFC   []string
 	mayContainCharsOnce       map[string]string
-	mayContainWordsOnce       map[string]string
+	words                     map[string]map[string][]string
 }
 
 // New generates new strgo validator.
@@ -112,8 +126,6 @@ func New(str string) StrGo {
 		onlyContainPrefixChars:    make(map[string]string),
 		onlyContainSuffixChars:    make(map[string]string),
 		mustContainChars:          make(map[string]string),
-		mustContainWords:          make(map[string]string),
-		mustNotContainWords:       make(map[string]string),
 		mustNotContainChars:       make(map[string]string),
 		mustNotContainPrefixChars: make(map[string]string),
 		mustNotContainSuffixChars: make(map[string]string),
@@ -121,7 +133,7 @@ func New(str string) StrGo {
 		mustBeFollowedByCharsF:    make(map[string]string),
 		mustBeFollowedByCharsFC:   []string{},
 		mayContainCharsOnce:       make(map[string]string),
-		mayContainWordsOnce:       make(map[string]string),
+		words:                     make(map[string]map[string][]string),
 	}
 }
 
@@ -150,13 +162,23 @@ func (str *strGo) OnlyContainSuffixChars(sc []string) StrGo {
 	return str
 }
 
+func (str *strGo) OnlyContainPrefixWords(pw []string) StrGo {
+	str.words = setWords(str.words, pw, "OnlyContainPrefixWords")
+	return str
+}
+
+func (str *strGo) OnlyContainSuffixWords(sw []string) StrGo {
+	str.words = setWords(str.words, sw, "OnlyContainSuffixWords")
+	return str
+}
+
 func (str *strGo) MustContainChars(c []string) StrGo {
 	str.mustContainChars = setChars(str.mustContainChars, c)
 	return str
 }
 
 func (str *strGo) MustContainWords(w []string) StrGo {
-	str.mustContainWords = setWords(str.mustContainWords, w)
+	str.words = setWords(str.words, w, "MustContainWords")
 	return str
 }
 
@@ -167,8 +189,8 @@ func (str *strGo) MustContainCharsOnce(c []string) StrGo {
 }
 
 func (str *strGo) MustContainWordsOnce(w []string) StrGo {
-	str.mustContainWords = setWords(str.mustContainWords, w)
-	str.mayContainWordsOnce = setWords(str.mayContainWordsOnce, w)
+	str.words = setWords(str.words, w, "MustContainWords")
+	str.words = setWords(str.words, w, "MayContainWordsOnce")
 	return str
 }
 
@@ -178,7 +200,7 @@ func (str *strGo) MustNotContainChars(c []string) StrGo {
 }
 
 func (str *strGo) MustNotContainWords(w []string) StrGo {
-	str.mustNotContainWords = setWords(str.mustNotContainWords, w)
+	str.words = setWords(str.words, w, "MustNotContainWords")
 	return str
 }
 
@@ -189,6 +211,16 @@ func (str *strGo) MustNotContainPrefixChars(pc []string) StrGo {
 
 func (str *strGo) MustNotContainSuffixChars(sc []string) StrGo {
 	str.mustNotContainSuffixChars = setChars(str.mustNotContainSuffixChars, sc)
+	return str
+}
+
+func (str *strGo) MustNotContainPrefixWords(pw []string) StrGo {
+	str.words = setWords(str.words, pw, "MustNotContainPrefixWords")
+	return str
+}
+
+func (str *strGo) MustNotContainSuffixWords(sw []string) StrGo {
+	str.words = setWords(str.words, sw, "MustNotContainSuffixWords")
 	return str
 }
 
@@ -205,7 +237,7 @@ func (str *strGo) MayContainCharsOnce(c []string) StrGo {
 }
 
 func (str *strGo) MayContainWordsOnce(w []string) StrGo {
-	str.mayContainWordsOnce = setWords(str.mayContainWordsOnce, w)
+	str.words = setWords(str.words, w, "MayContainWordsOnce")
 	return str
 }
 
@@ -250,22 +282,55 @@ func (str *strGo) Validate() error {
 		}
 	}
 
-	for _, v := range str.mustContainWords {
-		if !strings.Contains(str.str, v) {
-			return errors.New(fmt.Sprintf(ErrMustContainWords, v))
+	var onlyContainPrefixWordsFlag bool
+	var onlyContainSuffixWordsFlag bool
+	var errOnlyContainPrefixWords []string
+	var errOnlyContainSuffixWords []string
+
+	for s, v := range str.words {
+		if vc, ok := v["OnlyContainPrefixWords"]; ok && !onlyContainPrefixWordsFlag {
+			errOnlyContainPrefixWords = vc
+			if strings.HasPrefix(str.str, s) {
+				onlyContainPrefixWordsFlag = true
+				errOnlyContainPrefixWords = make([]string, 0)
+			}
+		}
+
+		if vc, ok := v["OnlyContainSuffixWords"]; ok && !onlyContainSuffixWordsFlag {
+			errOnlyContainSuffixWords = vc
+			if strings.HasSuffix(str.str, s) {
+				onlyContainSuffixWordsFlag = true
+				errOnlyContainSuffixWords = make([]string, 0)
+			}
+		}
+
+		if _, ok := v["MustContainWords"]; ok && !strings.Contains(str.str, s) {
+			return errors.New(fmt.Sprintf(ErrMustContainWords, s))
+		}
+
+		if _, ok := v["MayContainWordsOnce"]; ok && strings.Count(str.str, s) > 1 {
+			return errors.New(fmt.Sprintf(ErrMayContainWordsOnce, s))
+		}
+
+		if _, ok := v["MustNotContainWords"]; ok && strings.Contains(str.str, s) {
+			return errors.New(fmt.Sprintf(ErrMustNotContainWords, s))
+		}
+
+		if _, ok := v["MustNotContainPrefixWords"]; ok && strings.HasPrefix(str.str, s) {
+			return errors.New(fmt.Sprintf(ErrMustNotContainPrefixWords, s))
+		}
+
+		if _, ok := v["MustNotContainSuffixWords"]; ok && strings.HasSuffix(str.str, s) {
+			return errors.New(fmt.Sprintf(ErrMustNotContainSuffixWords, s))
 		}
 	}
 
-	for _, v := range str.mustNotContainWords {
-		if strings.Contains(str.str, v) {
-			return errors.New(fmt.Sprintf(ErrMustNotContainWords, v))
-		}
+	if len(errOnlyContainPrefixWords) > 0 {
+		return errors.New(fmt.Sprintf(ErrOnlyContainPrefixWords, errOnlyContainPrefixWords))
 	}
 
-	for _, v := range str.mayContainWordsOnce {
-		if strings.Count(str.str, v) > 1 {
-			return errors.New(fmt.Sprintf(ErrMayContainWordsOnce, v))
-		}
+	if len(errOnlyContainSuffixWords) > 0 {
+		return errors.New(fmt.Sprintf(ErrOnlyContainSuffixWords, errOnlyContainSuffixWords))
 	}
 
 	for i, v := range str.str {
@@ -323,10 +388,15 @@ func setChars(m map[string]string, c []string) map[string]string {
 	return m
 }
 
-func setWords(m map[string]string, w []string) map[string]string {
+func setWords(m map[string]map[string][]string, w []string, cond string) map[string]map[string][]string {
 	for _, v := range w {
 		if _, ok := m[v]; !ok {
-			m[v] = v
+			m[v] = make(map[string][]string)
+			m[v][cond] = w
+		} else {
+			if _, okC := m[v][cond]; !okC {
+				m[v][cond] = w
+			}
 		}
 	}
 	return m
