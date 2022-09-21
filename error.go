@@ -1,5 +1,7 @@
 package strgo
 
+const ErrEmpty = "the given string is empty"
+
 const ErrMinLength = "the given string length cannot be less than %v"
 
 const ErrMaxLength = "the given string length cannot be more than %v"

@@ -211,7 +211,7 @@ func (str *strGo) MayContainWordsOnce(w []string) StrGo {
 
 func (str *strGo) Validate() error {
 	if str.length < 1 {
-		return nil
+		return errors.New(ErrEmpty)
 	}
 
 	if str.length < str.minLength {

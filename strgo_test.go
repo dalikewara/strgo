@@ -15,6 +15,9 @@ func TestNew(t *testing.T) {
 func TestStrGo_Validate(t *testing.T) {
 	err := strgo.New("johndoe").Validate()
 	assert.Nil(t, err)
+	err = strgo.New("").Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, strgo.ErrEmpty)
 }
 
 func TestStrGo_MinLength(t *testing.T) {
