@@ -90,9 +90,6 @@ type strGo struct {
 	onlyContainSuffixChars    map[string]string
 	mustContainChars          map[string]string
 	mustContainWords          map[string]string
-	mustContainCharsOnce      map[string]string
-	mustContainCharsOnceF     map[string]string
-	mustContainWordsOnce      map[string]string
 	mustNotContainWords       map[string]string
 	mustNotContainChars       map[string]string
 	mustNotContainPrefixChars map[string]string
@@ -116,9 +113,6 @@ func New(str string) StrGo {
 		onlyContainSuffixChars:    make(map[string]string),
 		mustContainChars:          make(map[string]string),
 		mustContainWords:          make(map[string]string),
-		mustContainCharsOnce:      make(map[string]string),
-		mustContainCharsOnceF:     make(map[string]string),
-		mustContainWordsOnce:      make(map[string]string),
 		mustNotContainWords:       make(map[string]string),
 		mustNotContainChars:       make(map[string]string),
 		mustNotContainPrefixChars: make(map[string]string),
@@ -167,13 +161,14 @@ func (str *strGo) MustContainWords(w []string) StrGo {
 }
 
 func (str *strGo) MustContainCharsOnce(c []string) StrGo {
-	str.mustContainCharsOnce = setChars(str.mustContainCharsOnce, c)
-	str.mustContainCharsOnceF = setChars(str.mustContainCharsOnceF, c)
+	str.mustContainChars = setChars(str.mustContainChars, c)
+	str.mayContainCharsOnce = setChars(str.mayContainCharsOnce, c)
 	return str
 }
 
 func (str *strGo) MustContainWordsOnce(w []string) StrGo {
-	str.mustContainWordsOnce = setWords(str.mustContainWordsOnce, w)
+	str.mustContainWords = setWords(str.mustContainWords, w)
+	str.mayContainWordsOnce = setWords(str.mayContainWordsOnce, w)
 	return str
 }
 
@@ -215,228 +210,105 @@ func (str *strGo) MayContainWordsOnce(w []string) StrGo {
 }
 
 func (str *strGo) Validate() error {
-	var err error
-
-	if err = str.validateMinLength(); err != nil {
-		return err
-	}
-	if err = str.validateMaxLength(); err != nil {
-		return err
-	}
-	if err = str.validateOnlyContainPrefixChars(); err != nil {
-		return err
-	}
-	if err = str.validateMustNotContainPrefixChars(); err != nil {
-		return err
-	}
-	if err = str.validateOnlyContainSuffixChars(); err != nil {
-		return err
-	}
-	if err = str.validateMustNotContainSuffixChars(); err != nil {
-		return err
-	}
-	if err = str.validateMustContainWords(); err != nil {
-		return err
-	}
-	if err = str.validateMustContainWordsOnce(); err != nil {
-		return err
-	}
-	if err = str.validateMustNotContainWords(); err != nil {
-		return err
-	}
-	if err = str.validateMayContainWordsOnce(); err != nil {
-		return err
+	if str.length < 1 {
+		return nil
 	}
 
-	for i, v := range str.str {
-		s := string(v)
-
-		if err = str.validateOnlyContainChars(s); err != nil {
-			return err
-		}
-		if err = str.validateMustNotContainChars(s); err != nil {
-			return err
-		}
-		if err = str.validateMustContainCharsOnce(s); err != nil {
-			return err
-		}
-		if err = str.validateMustBeFollowedByChars(i, s); err != nil {
-			return err
-		}
-		if err = str.validateMayContainCharsOnce(s); err != nil {
-			return err
-		}
-
-		str.evaluateMustContainChars(s)
-	}
-
-	if err = str.validateMustContainChars(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (str *strGo) validateMinLength() error {
 	if str.length < str.minLength {
 		return errors.New(fmt.Sprintf(ErrMinLength, str.minLength))
 	}
-	return nil
-}
 
-func (str *strGo) validateMaxLength() error {
 	if str.length > str.maxLength {
 		return errors.New(fmt.Sprintf(ErrMaxLength, str.maxLength))
 	}
-	return nil
-}
 
-func (str *strGo) validateOnlyContainChars(s string) error {
-	if _, ok := str.onlyContainChar[s]; !ok && len(str.onlyContainChar) > 0 {
-		return errors.New(fmt.Sprintf(ErrOnlyContainChars, s))
-	}
-	return nil
-}
-
-func (str *strGo) validateOnlyContainPrefixChars() error {
-	if str.length > 0 && len(str.onlyContainPrefixChars) > 0 {
+	if len(str.onlyContainPrefixChars) > 0 {
 		p := string(str.str[0])
 		if _, ok := str.onlyContainPrefixChars[p]; !ok {
 			return errors.New(fmt.Sprintf(ErrOnlyContainPrefixChars, p))
 		}
 	}
-	return nil
-}
 
-func (str *strGo) validateOnlyContainSuffixChars() error {
-	if str.length > 0 && len(str.onlyContainSuffixChars) > 0 {
+	if len(str.onlyContainSuffixChars) > 0 {
 		s := string(str.str[str.length-1])
 		if _, ok := str.onlyContainSuffixChars[s]; !ok {
 			return errors.New(fmt.Sprintf(ErrOnlyContainSuffixChars, s))
 		}
 	}
-	return nil
-}
 
-func (str *strGo) evaluateMustContainChars(s string) {
-	if _, ok := str.mustContainChars[s]; ok && len(str.mustContainChars) > 0 {
-		delete(str.mustContainChars, s)
-	}
-	if _, ok := str.mustContainCharsOnce[s]; ok && len(str.mustContainCharsOnce) > 0 {
-		delete(str.mustContainCharsOnce, s)
-	}
-}
-
-func (str *strGo) validateMustContainChars() error {
-	for _, v := range str.mustContainChars {
-		return errors.New(fmt.Sprintf(ErrMustContainChars, v))
-	}
-	for _, v := range str.mustContainCharsOnce {
-		return errors.New(fmt.Sprintf(ErrMustContainChars, v))
-	}
-	return nil
-}
-
-func (str *strGo) validateMustContainWords() error {
-	for _, v := range str.mustContainWords {
-		if !strings.Contains(str.str, v) {
-			return errors.New(fmt.Sprintf(ErrMustContainWords, v))
-		}
-	}
-	return nil
-}
-
-func (str *strGo) validateMustContainCharsOnce(s string) error {
-	if v, ok := str.mustContainCharsOnceF[s]; ok && len(str.mustContainCharsOnceF) > 0 {
-		if v == "" {
-			return errors.New(fmt.Sprintf(ErrMustContainCharsOnce, s))
-		}
-		str.mustContainCharsOnceF[s] = ""
-	}
-	return nil
-}
-
-func (str *strGo) validateMustContainWordsOnce() error {
-	for _, v := range str.mustContainWordsOnce {
-		if !strings.Contains(str.str, v) {
-			return errors.New(fmt.Sprintf(ErrMustContainWords, v))
-		}
-		if strings.Count(str.str, v) > 1 {
-			return errors.New(fmt.Sprintf(ErrMustContainWordsOnce, v))
-		}
-	}
-	return nil
-}
-
-func (str *strGo) validateMustNotContainChars(s string) error {
-	if _, ok := str.mustNotContainChars[s]; ok && len(str.mustNotContainChars) > 0 {
-		return errors.New(fmt.Sprintf(ErrMustNotContainChars, s))
-	}
-	return nil
-}
-
-func (str *strGo) validateMustNotContainWords() error {
-	for _, v := range str.mustNotContainWords {
-		if strings.Contains(str.str, v) {
-			return errors.New(fmt.Sprintf(ErrMustNotContainWords, v))
-		}
-	}
-	return nil
-}
-
-func (str *strGo) validateMustNotContainPrefixChars() error {
-	if str.length > 0 && len(str.mustNotContainPrefixChars) > 0 {
+	if len(str.mustNotContainPrefixChars) > 0 {
 		p := string(str.str[0])
 		if _, ok := str.mustNotContainPrefixChars[p]; ok {
 			return errors.New(fmt.Sprintf(ErrMustNotContainPrefixChars, p))
 		}
 	}
-	return nil
-}
 
-func (str *strGo) validateMustNotContainSuffixChars() error {
-	if str.length > 0 && len(str.mustNotContainSuffixChars) > 0 {
+	if len(str.mustNotContainSuffixChars) > 0 {
 		s := string(str.str[str.length-1])
 		if _, ok := str.mustNotContainSuffixChars[s]; ok {
 			return errors.New(fmt.Sprintf(ErrMustNotContainSuffixChars, s))
 		}
 	}
-	return nil
-}
 
-func (str *strGo) validateMustBeFollowedByChars(i int, s string) error {
-	if _, ok := str.mustBeFollowedByChars[s]; ok && len(str.mustBeFollowedByChars) > 0 && i > 0 {
-		b := str.str[i-1]
-		a := str.str[i]
-		if (i + 1) <= str.length {
-			a = str.str[i+1]
-		}
-		if _, okB := str.mustBeFollowedByCharsF[string(b)]; !okB {
-			return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mustBeFollowedByCharsFC))
-		}
-		if _, okA := str.mustBeFollowedByCharsF[string(a)]; !okA {
-			return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mustBeFollowedByCharsFC))
+	for _, v := range str.mustContainWords {
+		if !strings.Contains(str.str, v) {
+			return errors.New(fmt.Sprintf(ErrMustContainWords, v))
 		}
 	}
-	return nil
-}
 
-func (str *strGo) validateMayContainCharsOnce(s string) error {
-	if v, ok := str.mayContainCharsOnce[s]; ok && len(str.mayContainCharsOnce) > 0 {
-		if v == "" {
-			return errors.New(fmt.Sprintf(ErrMayContainCharsOnce, s))
+	for _, v := range str.mustNotContainWords {
+		if strings.Contains(str.str, v) {
+			return errors.New(fmt.Sprintf(ErrMustNotContainWords, v))
 		}
-		str.mayContainCharsOnce[s] = ""
 	}
-	return nil
-}
 
-func (str *strGo) validateMayContainWordsOnce() error {
 	for _, v := range str.mayContainWordsOnce {
-		if strings.Contains(str.str, v) && strings.Count(str.str, v) > 1 {
+		if strings.Count(str.str, v) > 1 {
 			return errors.New(fmt.Sprintf(ErrMayContainWordsOnce, v))
 		}
 	}
+
+	for i, v := range str.str {
+		s := string(v)
+
+		if _, ok := str.onlyContainChar[s]; !ok && len(str.onlyContainChar) > 0 {
+			return errors.New(fmt.Sprintf(ErrOnlyContainChars, s))
+		}
+
+		if _, ok := str.mustNotContainChars[s]; ok && len(str.mustNotContainChars) > 0 {
+			return errors.New(fmt.Sprintf(ErrMustNotContainChars, s))
+		}
+
+		if _, ok := str.mustBeFollowedByChars[s]; ok && len(str.mustBeFollowedByChars) > 0 && i > 0 {
+			b := str.str[i-1]
+			a := str.str[i]
+			if (i + 1) <= str.length {
+				a = str.str[i+1]
+			}
+			if _, okB := str.mustBeFollowedByCharsF[string(b)]; !okB {
+				return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mustBeFollowedByCharsFC))
+			}
+			if _, okA := str.mustBeFollowedByCharsF[string(a)]; !okA {
+				return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mustBeFollowedByCharsFC))
+			}
+		}
+
+		if vm, ok := str.mayContainCharsOnce[s]; ok && len(str.mayContainCharsOnce) > 0 {
+			if vm == "" {
+				return errors.New(fmt.Sprintf(ErrMayContainCharsOnce, s))
+			}
+			str.mayContainCharsOnce[s] = ""
+		}
+
+		if _, ok := str.mustContainChars[s]; ok && len(str.mustContainChars) > 0 {
+			delete(str.mustContainChars, s)
+		}
+	}
+
+	for _, v := range str.mustContainChars {
+		return errors.New(fmt.Sprintf(ErrMustContainChars, v))
+	}
+
 	return nil
 }
 

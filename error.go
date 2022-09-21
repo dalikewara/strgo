@@ -14,10 +14,6 @@ const ErrMustContainChars = "the given string must contain char: %s"
 
 const ErrMustContainWords = "the given string must contain word: %s"
 
-const ErrMustContainCharsOnce = "the char: %s, must be appeared once in the string"
-
-const ErrMustContainWordsOnce = "the word: %s, must be appeared once in the string"
-
 const ErrMustNotContainChars = "the given string must not contain char: %s"
 
 const ErrMustNotContainWords = "the given string must not contain word: %s"

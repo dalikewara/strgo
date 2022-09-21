@@ -81,7 +81,7 @@ func TestStrGo_MustContainCharsOnce(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainChars, "k"))
 	err = strgo.New("johndoe").MustContainCharsOnce([]string{"n", "o"}).Validate()
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainCharsOnce, "o"))
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMayContainCharsOnce, "o"))
 }
 
 func TestStrGo_MustContainWordsOnce(t *testing.T) {
@@ -92,7 +92,7 @@ func TestStrGo_MustContainWordsOnce(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainWords, "de"))
 	err = strgo.New("johndoedoe").MustContainWordsOnce([]string{"ohn", "doe"}).Validate()
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainWordsOnce, "doe"))
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMayContainWordsOnce, "doe"))
 }
 
 func TestStrGo_MustNotContainChars(t *testing.T) {
