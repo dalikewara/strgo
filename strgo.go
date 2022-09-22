@@ -392,10 +392,10 @@ func setWords(m map[string]map[string][]string, w []string, cond string) map[str
 	for _, v := range w {
 		if _, ok := m[v]; !ok {
 			m[v] = make(map[string][]string)
-			m[v][cond] = w
+			m[v][cond] = append(m[v][cond], w...)
 		} else {
 			if _, okC := m[v][cond]; !okC {
-				m[v][cond] = w
+				m[v][cond] = append(m[v][cond], w...)
 			}
 		}
 	}
