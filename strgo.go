@@ -363,15 +363,17 @@ func setChars(m map[string]map[string]bool, cm map[string][]string, c []string, 
 }
 
 func setMustBeFollowedByChars(m map[string]map[string]bool, cm map[string][]string, c []string, fc []string, cond string) (map[string]map[string]bool, map[string][]string) {
+	fcm := make(map[string]bool)
+	for _, v := range fc {
+		fcm[v] = true
+	}
 	for _, v := range c {
 		if len(v) == 1 {
 			if _, ok := m[cond+v]; !ok {
 				m[cond+v] = make(map[string]bool)
 			}
-			for _, fv := range fc {
-				m[cond+v][fv] = true
-				cm[cond+v] = append(cm[cond+v], fv)
-			}
+			m[cond+v] = fcm
+			cm[cond+v] = append(cm[cond+v], fc...)
 		}
 	}
 	return m, cm
