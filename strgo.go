@@ -97,43 +97,24 @@ type StrGo interface {
 }
 
 type strGo struct {
-	str                       string
-	length                    int
-	minLength                 int
-	maxLength                 int
-	onlyContainChar           map[string]string
-	onlyContainPrefixChars    map[string]string
-	onlyContainSuffixChars    map[string]string
-	mustContainChars          map[string]string
-	mustNotContainChars       map[string]string
-	mustNotContainPrefixChars map[string]string
-	mustNotContainSuffixChars map[string]string
-	mustBeFollowedByChars     map[string]string
-	mustBeFollowedByCharsF    map[string]string
-	mustBeFollowedByCharsFC   []string
-	mayContainCharsOnce       map[string]string
-	words                     map[string]map[string][]string
+	str       string
+	length    int
+	minLength int
+	maxLength int
+	chars     map[string]map[string]bool
+	words     map[string]map[string]bool
+	conds     map[string][]string
 }
 
 // New generates new strgo validator.
 func New(str string) StrGo {
 	return &strGo{
-		str:                       str,
-		length:                    len(str),
-		minLength:                 0,
-		maxLength:                 len(str),
-		onlyContainChar:           make(map[string]string),
-		onlyContainPrefixChars:    make(map[string]string),
-		onlyContainSuffixChars:    make(map[string]string),
-		mustContainChars:          make(map[string]string),
-		mustNotContainChars:       make(map[string]string),
-		mustNotContainPrefixChars: make(map[string]string),
-		mustNotContainSuffixChars: make(map[string]string),
-		mustBeFollowedByChars:     make(map[string]string),
-		mustBeFollowedByCharsF:    make(map[string]string),
-		mustBeFollowedByCharsFC:   []string{},
-		mayContainCharsOnce:       make(map[string]string),
-		words:                     make(map[string]map[string][]string),
+		str:       str,
+		length:    len(str),
+		maxLength: len(str),
+		chars:     make(map[string]map[string]bool),
+		words:     make(map[string]map[string]bool),
+		conds:     make(map[string][]string),
 	}
 }
 
@@ -148,96 +129,94 @@ func (str *strGo) MaxLength(n int) StrGo {
 }
 
 func (str *strGo) OnlyContainChars(c []string) StrGo {
-	str.onlyContainChar = setChars(str.onlyContainChar, c)
+	str.chars, str.conds = setChars(str.chars, str.conds, c, "OnlyContainChar")
 	return str
 }
 
 func (str *strGo) OnlyContainPrefixChars(pc []string) StrGo {
-	str.onlyContainPrefixChars = setChars(str.onlyContainPrefixChars, pc)
+	str.chars, str.conds = setChars(str.chars, str.conds, pc, "OnlyContainPrefixChars")
 	return str
 }
 
 func (str *strGo) OnlyContainSuffixChars(sc []string) StrGo {
-	str.onlyContainSuffixChars = setChars(str.onlyContainSuffixChars, sc)
+	str.chars, str.conds = setChars(str.chars, str.conds, sc, "OnlyContainSuffixChars")
 	return str
 }
 
 func (str *strGo) OnlyContainPrefixWords(pw []string) StrGo {
-	str.words = setWords(str.words, pw, "OnlyContainPrefixWords")
+	str.words, str.conds = setWords(str.words, str.conds, pw, "OnlyContainPrefixWords")
 	return str
 }
 
 func (str *strGo) OnlyContainSuffixWords(sw []string) StrGo {
-	str.words = setWords(str.words, sw, "OnlyContainSuffixWords")
+	str.words, str.conds = setWords(str.words, str.conds, sw, "OnlyContainSuffixWords")
 	return str
 }
 
 func (str *strGo) MustContainChars(c []string) StrGo {
-	str.mustContainChars = setChars(str.mustContainChars, c)
+	str.chars, str.conds = setChars(str.chars, str.conds, c, "MustContainChars")
 	return str
 }
 
 func (str *strGo) MustContainWords(w []string) StrGo {
-	str.words = setWords(str.words, w, "MustContainWords")
+	str.words, str.conds = setWords(str.words, str.conds, w, "MustContainWords")
 	return str
 }
 
 func (str *strGo) MustContainCharsOnce(c []string) StrGo {
-	str.mustContainChars = setChars(str.mustContainChars, c)
-	str.mayContainCharsOnce = setChars(str.mayContainCharsOnce, c)
+	str.chars, str.conds = setChars(str.chars, str.conds, c, "MustContainChars")
+	str.chars, str.conds = setChars(str.chars, str.conds, c, "MayContainCharsOnce")
 	return str
 }
 
 func (str *strGo) MustContainWordsOnce(w []string) StrGo {
-	str.words = setWords(str.words, w, "MustContainWords")
-	str.words = setWords(str.words, w, "MayContainWordsOnce")
+	str.words, str.conds = setWords(str.words, str.conds, w, "MustContainWords")
+	str.words, str.conds = setWords(str.words, str.conds, w, "MayContainWordsOnce")
 	return str
 }
 
 func (str *strGo) MustNotContainChars(c []string) StrGo {
-	str.mustNotContainChars = setChars(str.mustNotContainChars, c)
+	str.chars, str.conds = setChars(str.chars, str.conds, c, "MustNotContainChars")
 	return str
 }
 
 func (str *strGo) MustNotContainWords(w []string) StrGo {
-	str.words = setWords(str.words, w, "MustNotContainWords")
+	str.words, str.conds = setWords(str.words, str.conds, w, "MustNotContainWords")
 	return str
 }
 
 func (str *strGo) MustNotContainPrefixChars(pc []string) StrGo {
-	str.mustNotContainPrefixChars = setChars(str.mustNotContainPrefixChars, pc)
+	str.chars, str.conds = setChars(str.chars, str.conds, pc, "MustNotContainPrefixChars")
 	return str
 }
 
 func (str *strGo) MustNotContainSuffixChars(sc []string) StrGo {
-	str.mustNotContainSuffixChars = setChars(str.mustNotContainSuffixChars, sc)
+	str.chars, str.conds = setChars(str.chars, str.conds, sc, "MustNotContainSuffixChars")
 	return str
 }
 
 func (str *strGo) MustNotContainPrefixWords(pw []string) StrGo {
-	str.words = setWords(str.words, pw, "MustNotContainPrefixWords")
+	str.words, str.conds = setWords(str.words, str.conds, pw, "MustNotContainPrefixWords")
 	return str
 }
 
 func (str *strGo) MustNotContainSuffixWords(sw []string) StrGo {
-	str.words = setWords(str.words, sw, "MustNotContainSuffixWords")
+	str.words, str.conds = setWords(str.words, str.conds, sw, "MustNotContainSuffixWords")
 	return str
 }
 
 func (str *strGo) MustBeFollowedByChars(c, fc []string) StrGo {
-	str.mustBeFollowedByChars = setChars(str.mustBeFollowedByChars, c)
-	str.mustBeFollowedByCharsF = setChars(str.mustBeFollowedByCharsF, fc)
-	str.mustBeFollowedByCharsFC = fc
+	str.chars, str.conds = setMustBeFollowedByChars(str.chars, str.conds, c, fc, "MustBeFollowedByChars")
 	return str
 }
 
 func (str *strGo) MayContainCharsOnce(c []string) StrGo {
-	str.mayContainCharsOnce = setChars(str.mayContainCharsOnce, c)
+	str.chars, str.conds = setChars(str.chars, str.conds, c, "MayContainCharsOnce")
 	return str
 }
 
 func (str *strGo) MayContainWordsOnce(w []string) StrGo {
-	str.words = setWords(str.words, w, "MayContainWordsOnce")
+	str.words, str.conds = setWords(str.words, str.conds, w, "MayContainWordsOnce")
 	return str
 }
 
@@ -254,53 +233,16 @@ func (str *strGo) Validate() error {
 		return errors.New(fmt.Sprintf(ErrMaxLength, str.maxLength))
 	}
 
-	if len(str.onlyContainPrefixChars) > 0 {
-		p := string(str.str[0])
-		if _, ok := str.onlyContainPrefixChars[p]; !ok {
-			return errors.New(fmt.Sprintf(ErrOnlyContainPrefixChars, p))
-		}
-	}
-
-	if len(str.onlyContainSuffixChars) > 0 {
-		s := string(str.str[str.length-1])
-		if _, ok := str.onlyContainSuffixChars[s]; !ok {
-			return errors.New(fmt.Sprintf(ErrOnlyContainSuffixChars, s))
-		}
-	}
-
-	if len(str.mustNotContainPrefixChars) > 0 {
-		p := string(str.str[0])
-		if _, ok := str.mustNotContainPrefixChars[p]; ok {
-			return errors.New(fmt.Sprintf(ErrMustNotContainPrefixChars, p))
-		}
-	}
-
-	if len(str.mustNotContainSuffixChars) > 0 {
-		s := string(str.str[str.length-1])
-		if _, ok := str.mustNotContainSuffixChars[s]; ok {
-			return errors.New(fmt.Sprintf(ErrMustNotContainSuffixChars, s))
-		}
-	}
-
-	var onlyContainPrefixWordsFlag bool
-	var onlyContainSuffixWordsFlag bool
-	var errOnlyContainPrefixWords []string
-	var errOnlyContainSuffixWords []string
-
 	for s, v := range str.words {
-		if vc, ok := v["OnlyContainPrefixWords"]; ok && !onlyContainPrefixWordsFlag {
-			errOnlyContainPrefixWords = vc
-			if strings.HasPrefix(str.str, s) {
-				onlyContainPrefixWordsFlag = true
-				errOnlyContainPrefixWords = make([]string, 0)
+		if _, ok := str.conds["OnlyContainPrefixWords"]; ok {
+			if _, ok := v["OnlyContainPrefixWords"]; ok && strings.HasPrefix(str.str, s) {
+				delete(str.conds, "OnlyContainPrefixWords")
 			}
 		}
 
-		if vc, ok := v["OnlyContainSuffixWords"]; ok && !onlyContainSuffixWordsFlag {
-			errOnlyContainSuffixWords = vc
-			if strings.HasSuffix(str.str, s) {
-				onlyContainSuffixWordsFlag = true
-				errOnlyContainSuffixWords = make([]string, 0)
+		if _, ok := str.conds["OnlyContainSuffixWords"]; ok {
+			if _, ok := v["OnlyContainSuffixWords"]; ok && strings.HasSuffix(str.str, s) {
+				delete(str.conds, "OnlyContainSuffixWords")
 			}
 		}
 
@@ -325,79 +267,123 @@ func (str *strGo) Validate() error {
 		}
 	}
 
-	if len(errOnlyContainPrefixWords) > 0 {
-		return errors.New(fmt.Sprintf(ErrOnlyContainPrefixWords, errOnlyContainPrefixWords))
+	if v, ok := str.conds["OnlyContainPrefixWords"]; ok {
+		return errors.New(fmt.Sprintf(ErrOnlyContainPrefixWords, v))
 	}
 
-	if len(errOnlyContainSuffixWords) > 0 {
-		return errors.New(fmt.Sprintf(ErrOnlyContainSuffixWords, errOnlyContainSuffixWords))
+	if v, ok := str.conds["OnlyContainSuffixWords"]; ok {
+		return errors.New(fmt.Sprintf(ErrOnlyContainSuffixWords, v))
+	}
+
+	if v, ok := str.chars["OnlyContainPrefixChars"]; ok {
+		p := string(str.str[0])
+		if _, ok := v[p]; !ok {
+			return errors.New(fmt.Sprintf(ErrOnlyContainPrefixChars, p))
+		}
+	}
+
+	if v, ok := str.chars["OnlyContainSuffixChars"]; ok {
+		s := string(str.str[str.length-1])
+		if _, ok := v[s]; !ok {
+			return errors.New(fmt.Sprintf(ErrOnlyContainSuffixChars, s))
+		}
+	}
+
+	if v, ok := str.chars["MustNotContainPrefixChars"]; ok {
+		p := string(str.str[0])
+		if _, ok := v[p]; ok {
+			return errors.New(fmt.Sprintf(ErrMustNotContainPrefixChars, p))
+		}
+	}
+
+	if v, ok := str.chars["MustNotContainSuffixChars"]; ok {
+		s := string(str.str[str.length-1])
+		if _, ok := v[s]; ok {
+			return errors.New(fmt.Sprintf(ErrMustNotContainSuffixChars, s))
+		}
 	}
 
 	for i, v := range str.str {
 		s := string(v)
 
-		if _, ok := str.onlyContainChar[s]; !ok && len(str.onlyContainChar) > 0 {
+		if v, ok := str.chars["OnlyContainChar"]; ok && !v[s] {
 			return errors.New(fmt.Sprintf(ErrOnlyContainChars, s))
 		}
 
-		if _, ok := str.mustNotContainChars[s]; ok && len(str.mustNotContainChars) > 0 {
+		if v, ok := str.chars["MustNotContainChars"]; ok && v[s] {
 			return errors.New(fmt.Sprintf(ErrMustNotContainChars, s))
 		}
 
-		if _, ok := str.mustBeFollowedByChars[s]; ok && len(str.mustBeFollowedByChars) > 0 && i > 0 {
-			b := str.str[i-1]
-			a := str.str[i]
-			if (i + 1) <= str.length {
-				a = str.str[i+1]
+		if v, ok := str.chars["MustBeFollowedByChars"+s]; ok {
+			b := s
+			a := s
+			if i > 0 && i < str.length {
+				b = string(str.str[i-1])
 			}
-			if _, okB := str.mustBeFollowedByCharsF[string(b)]; !okB {
-				return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mustBeFollowedByCharsFC))
+			if (i + 1) < str.length {
+				a = string(str.str[i+1])
 			}
-			if _, okA := str.mustBeFollowedByCharsF[string(a)]; !okA {
-				return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mustBeFollowedByCharsFC))
+			if !v[b] || !v[a] {
+				return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.conds["MustBeFollowedByChars"+s]))
 			}
 		}
 
-		if vm, ok := str.mayContainCharsOnce[s]; ok && len(str.mayContainCharsOnce) > 0 {
-			if vm == "" {
-				return errors.New(fmt.Sprintf(ErrMayContainCharsOnce, s))
+		if v, ok := str.chars["MayContainCharsOnce"]; ok {
+			if _, ok := v[s]; ok {
+				if !v[s] {
+					return errors.New(fmt.Sprintf(ErrMayContainCharsOnce, s))
+				}
+				v[s] = false
 			}
-			str.mayContainCharsOnce[s] = ""
 		}
 
-		if _, ok := str.mustContainChars[s]; ok && len(str.mustContainChars) > 0 {
-			delete(str.mustContainChars, s)
+		if v, ok := str.chars["MustContainChars"]; ok && v[s] {
+			delete(str.chars["MustContainChars"], s)
 		}
 	}
 
-	for _, v := range str.mustContainChars {
-		return errors.New(fmt.Sprintf(ErrMustContainChars, v))
+	for s, _ := range str.chars["MustContainChars"] {
+		return errors.New(fmt.Sprintf(ErrMustContainChars, s))
 	}
 
 	return nil
 }
 
-func setChars(m map[string]string, c []string) map[string]string {
+func setChars(m map[string]map[string]bool, cm map[string][]string, c []string, cond string) (map[string]map[string]bool, map[string][]string) {
 	for _, v := range c {
 		if len(v) == 1 {
-			if _, ok := m[v]; !ok {
-				m[v] = v
+			if _, ok := m[cond]; !ok {
+				m[cond] = make(map[string]bool)
 			}
+			m[cond][v] = true
+			cm[cond] = append(cm[cond], v)
 		}
 	}
-	return m
+	return m, cm
 }
 
-func setWords(m map[string]map[string][]string, w []string, cond string) map[string]map[string][]string {
-	for _, v := range w {
-		if _, ok := m[v]; !ok {
-			m[v] = make(map[string][]string)
-			m[v][cond] = append(m[v][cond], w...)
-		} else {
-			if _, okC := m[v][cond]; !okC {
-				m[v][cond] = append(m[v][cond], w...)
+func setMustBeFollowedByChars(m map[string]map[string]bool, cm map[string][]string, c []string, fc []string, cond string) (map[string]map[string]bool, map[string][]string) {
+	for _, v := range c {
+		if len(v) == 1 {
+			if _, ok := m[cond+v]; !ok {
+				m[cond+v] = make(map[string]bool)
+			}
+			for _, fv := range fc {
+				m[cond+v][fv] = true
+				cm[cond+v] = append(cm[cond+v], fv)
 			}
 		}
 	}
-	return m
+	return m, cm
+}
+
+func setWords(m map[string]map[string]bool, cm map[string][]string, w []string, cond string) (map[string]map[string]bool, map[string][]string) {
+	for _, v := range w {
+		if _, ok := m[v]; !ok {
+			m[v] = make(map[string]bool)
+		}
+		m[v][cond] = true
+		cm[cond] = append(cm[cond], v)
+	}
+	return m, cm
 }

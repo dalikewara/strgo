@@ -63,9 +63,9 @@ func TestStrGo_OnlyContainSuffixChars(t *testing.T) {
 func TestStrGo_OnlyContainPrefixWords(t *testing.T) {
 	err := strgo.New("johndoe").OnlyContainPrefixWords([]string{"hn", "joh"}).Validate()
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").OnlyContainPrefixWords([]string{"noh", "koh"}).Validate()
+	err = strgo.New("johndoe").OnlyContainPrefixWords([]string{"noh", "koh"}).OnlyContainPrefixWords([]string{"noh2", "koh2"}).Validate()
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainPrefixWords, "[noh koh]"))
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainPrefixWords, "[noh koh noh2 koh2]"))
 }
 
 func TestStrGo_OnlyContainSuffixWords(t *testing.T) {
@@ -165,12 +165,18 @@ func TestStrGo_MustNotContainSuffixWords(t *testing.T) {
 func TestStrGo_MustBeFollowedByChars(t *testing.T) {
 	err := strgo.New("johndoe").MustBeFollowedByChars([]string{"h", "d"}, []string{"m", "n", "o"}).Validate()
 	assert.Nil(t, err)
+	err = strgo.New("johndoeooedoe").MustBeFollowedByChars([]string{"o"}, []string{"e", "o", "d", "j", "h"}).MustBeFollowedByChars([]string{"d"}, []string{"e", "o"}).Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "d", "[e o]"))
 	err = strgo.New("johndoe").MustBeFollowedByChars([]string{"h", "o"}, []string{"d", "k", "l"}).Validate()
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "o", "[d k l]"))
 	err = strgo.New("johndoe").MustBeFollowedByChars([]string{"h", "o"}, []string{"d", "k", "j"}).Validate()
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "o", "[d k j]"))
+	err = strgo.New("johndoe").MustBeFollowedByChars([]string{"o", "n"}, strgo.ALPHABETIC).MustBeFollowedByChars([]string{"d"}, []string{"r", "m"}).Validate()
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "d", "[r m]"))
 }
 
 func TestStrGo_MayContainCharsOnce(t *testing.T) {

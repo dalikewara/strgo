@@ -2,7 +2,8 @@
 
 ### 2022
 
-- v1.1.2 (2022-09-22)
+- v1.1.2 - v1.2.0 (2022-09-22)
+  - optimize validate logic
   - Fix possibly issue on `setWords`
 
 - v1.0.1 - v1.1.1 (2022-09-21)
