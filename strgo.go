@@ -1,397 +1,345 @@
 package strgo
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
+	"strconv"
 	"strings"
 )
 
-type StrGo interface {
-	// Validate evaluates all conditions that have been set before and will return an error
-	// if one of the conditions is not match.
-	Validate() error
+const asciiMaxDec = uint8(254)
+const asciiMaxDecInt32 = int32(254)
 
-	// MinLength sets the minimum length condition for the string
-	// and will be evaluated when Validate is called.
-	MinLength(n int) StrGo
-
-	// MaxLength sets the maximum length condition for the string
-	// and will be evaluated when Validate is called.
-	MaxLength(n int) StrGo
-
-	// OnlyContainChars sets condition that the string can only contain characters
-	// from the given `c` and will be evaluated when Validate is called.
-	OnlyContainChars(c []string) StrGo
-
-	// OnlyContainPrefixChars sets condition that the string can only contain prefix characters
-	// from the given `pc` and will be evaluated when Validate is called.
-	OnlyContainPrefixChars(pc []string) StrGo
-
-	// OnlyContainSuffixChars sets condition that the string can only contain suffix characters
-	// from the given `sc` and will be evaluated when Validate is called.
-	OnlyContainSuffixChars(sc []string) StrGo
-
-	// OnlyContainPrefixWords sets condition that the string can only contain prefix mWord
-	// from the given `pw` and will be evaluated when Validate is called.
-	OnlyContainPrefixWords(pw []string) StrGo
-
-	// OnlyContainSuffixWords sets condition that the string can only contain suffix mWord
-	// from the given `sw` and will be evaluated when Validate is called.
-	OnlyContainSuffixWords(sw []string) StrGo
-
-	// MustContainChars sets condition that the string must contain characters
-	// from the given `c` and will be evaluated when Validate is called.
-	MustContainChars(c []string) StrGo
-
-	// MustContainWords sets condition that the string must contain mWord
-	// from the given `w` and will be evaluated when Validate is called.
-	MustContainWords(w []string) StrGo
-
-	// MustContainCharsOnce sets condition that the string must contain characters
-	// from the given `c` and each of them must be appeared once in the string.
-	// It will be evaluated when Validate is called.
-	MustContainCharsOnce(c []string) StrGo
-
-	// MustContainWordsOnce sets condition that the string must contain mWord
-	// from the given `w` and each of them must be appeared once in the string.
-	// It will be evaluated when Validate is called.
-	MustContainWordsOnce(w []string) StrGo
-
-	// MustNotContainChars sets condition that the string must not contain characters
-	// from the given `c` and will be evaluated when Validate is called.
-	MustNotContainChars(c []string) StrGo
-
-	// MustNotContainWords sets condition that the string must not contain mWord
-	// from the given `w` and will be evaluated when Validate is called.
-	MustNotContainWords(w []string) StrGo
-
-	// MustNotContainPrefixChars sets condition that the string must not contain prefix characters
-	// from the given `pc` and will be evaluated when Validate is called.
-	MustNotContainPrefixChars(pc []string) StrGo
-
-	// MustNotContainSuffixChars sets condition that the string must not contain suffix characters
-	// from the given `sc` and will be evaluated when Validate is called.
-	MustNotContainSuffixChars(sc []string) StrGo
-
-	// MustNotContainPrefixWords sets condition that the string must not contain prefix mWord
-	// from the given `pw` and will be evaluated when Validate is called.
-	MustNotContainPrefixWords(pw []string) StrGo
-
-	// MustNotContainSuffixWords sets condition that the string must not contain suffix mWord
-	// from the given `sw` and will be evaluated when Validate is called.
-	MustNotContainSuffixWords(sw []string) StrGo
-
-	// MustBeFollowedByChars sets condition that the given characters `c` in the string must be followed by
-	// at least one of the characters from the given `fc` and will be evaluated when Validate is called.
-	MustBeFollowedByChars(c, fc []string) StrGo
-
-	// MayContainCharsOnce sets condition that the string may contain characters
-	// from the given `c`, but they must be appeared once in the string.
-	// It will be evaluated when Validate is called.
-	MayContainCharsOnce(c []string) StrGo
-
-	// MayContainWordsOnce sets condition that the string may contain mWord
-	// from the given `w`, but they must be appeared once in the string.
-	// It will be evaluated when Validate is called.
-	MayContainWordsOnce(w []string) StrGo
+type Condition struct {
+	MinLength                 int
+	MaxLength                 int
+	OnlyContains              []byte
+	OnlyContainsPrefix        []byte
+	OnlyContainsSuffix        []byte
+	OnlyContainsPrefixWord    []string
+	OnlyContainsSuffixWord    []string
+	MustContains              []byte
+	MustContainsWord          []string
+	MustContainsOnce          []byte
+	MustContainsWordOnce      []string
+	MustNotContains           []byte
+	MustNotContainsWord       []string
+	MustNotContainsPrefix     []byte
+	MustNotContainsSuffix     []byte
+	MustNotContainsPrefixWord []string
+	MustNotContainsSuffixWord []string
+	MayContainsOnce           []byte
+	MayContainsWordOnce       []string
+	MustBeFollowedBy          [2][]byte
 }
 
-type strGo struct {
-	str       string
-	length    int
-	minLength int
-	maxLength int
-	mChar     map[string]map[string]bool
-	mWord     map[string]map[string]bool
-	mCond     map[string][]string
-	err       error
+type condition struct {
+	minLength   int
+	maxLength   int
+	iterateText bool
+
+	hasAscii bool
+	/*
+		ascii iterate conditions index:
+		0: OnlyContains
+		1: OnlyContainsPrefix
+		2: OnlyContainsSuffix
+		3: MustContains
+		4: MustNotContains
+		5: MustNotContainsPrefix
+		6: MustNotContainsSuffix
+		7: MayContainsOnce
+		8: MustBeFollowedBy
+	*/
+	ascii                 [9]bool
+	asciiC                [9][255]byte
+	asciiMustBeFollowedBy [255][]byte
+
+	hasWord bool
+	/*
+		word iterate conditions index:
+		0: OnlyContainsPrefixWord
+		1: OnlyContainsSuffixWord
+		2: MustContainsWord
+		3: MustContainsWordOnce
+		4: MustNotContainsWord
+		5: MustNotContainsPrefixWord
+		6: MustNotContainsSuffixWord
+		7: MayContainsWordOnce
+	*/
+	word  [8]bool
+	words [8][]string
 }
 
-// New generates new strgo validator.
-func New(str string) StrGo {
-	return &strGo{
-		str:       str,
-		length:    len(str),
-		maxLength: len(str),
-		mChar:     make(map[string]map[string]bool),
-		mWord:     make(map[string]map[string]bool),
-		mCond:     make(map[string][]string),
+// Validate matches the string based on the given conditions.
+// If one doesn't match, it will return an error.
+func Validate(text string, conds ...*Condition) error {
+	if text == "" {
+		return errors.New("the string is empty")
 	}
-}
+	if len(conds) < 1 {
+		return nil
+	}
+	textLen := len(text)
+	cond := setCond(conds...)
 
-func (str *strGo) MinLength(n int) StrGo {
-	str.minLength = n
-	return str
-}
-
-func (str *strGo) MaxLength(n int) StrGo {
-	str.maxLength = n
-	return str
-}
-
-func (str *strGo) OnlyContainChars(c []string) StrGo {
-	str.setMapChar(c, "OnlyContainChar")
-	return str
-}
-
-func (str *strGo) OnlyContainPrefixChars(pc []string) StrGo {
-	str.setMapChar(pc, "OnlyContainPrefixChars")
-	return str
-}
-
-func (str *strGo) OnlyContainSuffixChars(sc []string) StrGo {
-	str.setMapChar(sc, "OnlyContainSuffixChars")
-	return str
-}
-
-func (str *strGo) OnlyContainPrefixWords(pw []string) StrGo {
-	str.setMapWord(pw, "OnlyContainPrefixWords")
-	return str
-}
-
-func (str *strGo) OnlyContainSuffixWords(sw []string) StrGo {
-	str.setMapWord(sw, "OnlyContainSuffixWords")
-	return str
-}
-
-func (str *strGo) MustContainChars(c []string) StrGo {
-	str.setMapChar(c, "MustContainChars")
-	return str
-}
-
-func (str *strGo) MustContainWords(w []string) StrGo {
-	str.setMapWord(w, "MustContainWords")
-	return str
-}
-
-func (str *strGo) MustContainCharsOnce(c []string) StrGo {
-	str.setMapChar(c, "MustContainChars")
-	str.setMapChar(c, "MayContainCharsOnce")
-	return str
-}
-
-func (str *strGo) MustContainWordsOnce(w []string) StrGo {
-	str.setMapWord(w, "MustContainWords")
-	str.setMapWord(w, "MayContainWordsOnce")
-	return str
-}
-
-func (str *strGo) MustNotContainChars(c []string) StrGo {
-	str.setMapChar(c, "MustNotContainChars")
-	return str
-}
-
-func (str *strGo) MustNotContainWords(w []string) StrGo {
-	str.setMapWord(w, "MustNotContainWords")
-	return str
-}
-
-func (str *strGo) MustNotContainPrefixChars(pc []string) StrGo {
-	str.setMapChar(pc, "MustNotContainPrefixChars")
-	return str
-}
-
-func (str *strGo) MustNotContainSuffixChars(sc []string) StrGo {
-	str.setMapChar(sc, "MustNotContainSuffixChars")
-	return str
-}
-
-func (str *strGo) MustNotContainPrefixWords(pw []string) StrGo {
-	str.setMapWord(pw, "MustNotContainPrefixWords")
-	return str
-}
-
-func (str *strGo) MustNotContainSuffixWords(sw []string) StrGo {
-	str.setMapWord(sw, "MustNotContainSuffixWords")
-	return str
-}
-
-func (str *strGo) MustBeFollowedByChars(c, fc []string) StrGo {
-	str.setMapCharMustBeFollowedBy(c, fc, "MustBeFollowedByChars")
-	return str
-}
-
-func (str *strGo) MayContainCharsOnce(c []string) StrGo {
-	str.setMapChar(c, "MayContainCharsOnce")
-	return str
-}
-
-func (str *strGo) MayContainWordsOnce(w []string) StrGo {
-	str.setMapWord(w, "MayContainWordsOnce")
-	return str
-}
-
-func (str *strGo) Validate() error {
-	if str.err != nil {
-		return str.err
+	if cond.minLength > 0 && textLen < cond.minLength {
+		return errors.New("the string length cannot be less than " + strconv.Itoa(cond.minLength))
+	}
+	if cond.maxLength > 0 && textLen > cond.maxLength {
+		return errors.New("the string length cannot be more than " + strconv.Itoa(cond.maxLength))
 	}
 
-	if str.length < 1 {
-		return errors.New(ErrEmpty)
-	}
+	// ascii
 
-	if str.length < str.minLength {
-		return errors.New(fmt.Sprintf(ErrMinLength, str.minLength))
-	}
-
-	if str.length > str.maxLength {
-		return errors.New(fmt.Sprintf(ErrMaxLength, str.maxLength))
-	}
-
-	for s, v := range str.mWord {
-		if _, ok := str.mCond["OnlyContainPrefixWords"]; ok {
-			if _, ok := v["OnlyContainPrefixWords"]; ok && strings.HasPrefix(str.str, s) {
-				delete(str.mCond, "OnlyContainPrefixWords")
+	if cond.hasAscii {
+		if cond.ascii[1] {
+			if text[0] > asciiMaxDec {
+				return errors.New("the char: " + string(text[0]) + ", is not a valid ascii format")
+			}
+			if cond.asciiC[1][text[0]] < 1 {
+				return errors.New("the string cannot contain prefix char: " + string(text[0]))
 			}
 		}
-
-		if _, ok := str.mCond["OnlyContainSuffixWords"]; ok {
-			if _, ok := v["OnlyContainSuffixWords"]; ok && strings.HasSuffix(str.str, s) {
-				delete(str.mCond, "OnlyContainSuffixWords")
+		if cond.ascii[2] {
+			if text[textLen-1] > asciiMaxDec {
+				return errors.New("the char: " + string(text[textLen-1]) + ", is not a valid ascii format")
+			}
+			if cond.asciiC[2][text[textLen-1]] < 1 {
+				return errors.New("the string cannot contain suffix char: " + string(text[textLen-1]))
 			}
 		}
-
-		if _, ok := v["MustContainWords"]; ok && !strings.Contains(str.str, s) {
-			return errors.New(fmt.Sprintf(ErrMustContainWords, s))
-		}
-
-		if _, ok := v["MayContainWordsOnce"]; ok && strings.Count(str.str, s) > 1 {
-			return errors.New(fmt.Sprintf(ErrMayContainWordsOnce, s))
-		}
-
-		if _, ok := v["MustNotContainWords"]; ok && strings.Contains(str.str, s) {
-			return errors.New(fmt.Sprintf(ErrMustNotContainWords, s))
-		}
-
-		if _, ok := v["MustNotContainPrefixWords"]; ok && strings.HasPrefix(str.str, s) {
-			return errors.New(fmt.Sprintf(ErrMustNotContainPrefixWords, s))
-		}
-
-		if _, ok := v["MustNotContainSuffixWords"]; ok && strings.HasSuffix(str.str, s) {
-			return errors.New(fmt.Sprintf(ErrMustNotContainSuffixWords, s))
-		}
-	}
-
-	if v, ok := str.mCond["OnlyContainPrefixWords"]; ok {
-		return errors.New(fmt.Sprintf(ErrOnlyContainPrefixWords, v))
-	}
-
-	if v, ok := str.mCond["OnlyContainSuffixWords"]; ok {
-		return errors.New(fmt.Sprintf(ErrOnlyContainSuffixWords, v))
-	}
-
-	if v, ok := str.mChar["OnlyContainPrefixChars"]; ok {
-		p := string(str.str[0])
-		if _, ok := v[p]; !ok {
-			return errors.New(fmt.Sprintf(ErrOnlyContainPrefixChars, p))
-		}
-	}
-
-	if v, ok := str.mChar["OnlyContainSuffixChars"]; ok {
-		s := string(str.str[str.length-1])
-		if _, ok := v[s]; !ok {
-			return errors.New(fmt.Sprintf(ErrOnlyContainSuffixChars, s))
-		}
-	}
-
-	if v, ok := str.mChar["MustNotContainPrefixChars"]; ok {
-		p := string(str.str[0])
-		if _, ok := v[p]; ok {
-			return errors.New(fmt.Sprintf(ErrMustNotContainPrefixChars, p))
-		}
-	}
-
-	if v, ok := str.mChar["MustNotContainSuffixChars"]; ok {
-		s := string(str.str[str.length-1])
-		if _, ok := v[s]; ok {
-			return errors.New(fmt.Sprintf(ErrMustNotContainSuffixChars, s))
-		}
-	}
-
-	for i, v := range str.str {
-		s := string(v)
-
-		if v, ok := str.mChar["OnlyContainChar"]; ok && !v[s] {
-			return errors.New(fmt.Sprintf(ErrOnlyContainChars, s))
-		}
-
-		if v, ok := str.mChar["MustNotContainChars"]; ok && v[s] {
-			return errors.New(fmt.Sprintf(ErrMustNotContainChars, s))
-		}
-
-		if v, ok := str.mChar["MustBeFollowedByChars"+s]; ok {
-			b := s
-			a := s
-			if i > 0 && i < str.length {
-				b = string(str.str[i-1])
+		if cond.ascii[5] {
+			if text[0] > asciiMaxDec {
+				return errors.New("the char: " + string(text[0]) + ", is not a valid ascii format")
 			}
-			if (i + 1) < str.length {
-				a = string(str.str[i+1])
-			}
-			if !v[b] || !v[a] {
-				return errors.New(fmt.Sprintf(ErrMustBeFollowedByChars, s, str.mCond["MustBeFollowedByChars"+s]))
+			if cond.asciiC[5][text[0]] > 0 {
+				return errors.New("the string must not contain prefix: " + string(text[0]))
 			}
 		}
-
-		if v, ok := str.mChar["MayContainCharsOnce"]; ok {
-			if _, ok := v[s]; ok {
-				if !v[s] {
-					return errors.New(fmt.Sprintf(ErrMayContainCharsOnce, s))
+		if cond.ascii[6] {
+			if text[textLen-1] > asciiMaxDec {
+				return errors.New("the char: " + string(text[textLen-1]) + ", is not a valid ascii format")
+			}
+			if cond.asciiC[6][text[textLen-1]] > 0 {
+				return errors.New("the string must not contain suffix: " + string(text[textLen-1]))
+			}
+		}
+		if cond.iterateText {
+			for i, v := range text {
+				if v > asciiMaxDecInt32 {
+					return errors.New("the char: " + string(v) + ", is not a valid ascii format")
 				}
-				v[s] = false
+				if cond.ascii[0] && cond.asciiC[0][v] < 1 {
+					return errors.New("the string cannot contain char: " + string(byte(v)))
+				}
+				if cond.ascii[4] && cond.asciiC[4][v] > 0 {
+					return errors.New("the string must not contain char: " + string(byte(v)))
+				}
+				if cond.ascii[3] && cond.asciiC[3][v] > 0 {
+					cond.asciiC[3][v] = 0
+				}
+				if cond.ascii[7] && cond.asciiC[7][v] > 0 {
+					if cond.asciiC[7][v] > 1 {
+						return errors.New("the char: " + string(byte(v)) + ", must be appeared once in the string")
+					}
+					cond.asciiC[7][v] += 1
+				}
+
+				if cond.ascii[8] {
+					if cond.asciiMustBeFollowedBy[v] != nil {
+						bf := text[i]
+						af := text[i]
+						if i > 0 && i < textLen {
+							bf = text[i-1]
+						}
+						if (i + 1) < textLen {
+							af = text[i+1]
+						}
+						if bytes.IndexByte(cond.asciiMustBeFollowedBy[v], bf) < 0 || bytes.IndexByte(cond.asciiMustBeFollowedBy[v], af) < 0 {
+							return errors.New("the char: " + string(byte(v)) + ", must be followed with at least one of these characters: " + string(cond.asciiMustBeFollowedBy[v]))
+						}
+					}
+				}
+			}
+			if cond.ascii[3] {
+				for b, v := range cond.asciiC[3] {
+					if v > 0 {
+						return errors.New("the string must contain char: " + string(rune(b)))
+					}
+				}
 			}
 		}
+	}
 
-		if v, ok := str.mChar["MustContainChars"]; ok && v[s] {
-			delete(str.mChar["MustContainChars"], s)
+	// word
+
+	if cond.hasWord {
+		if cond.word[0] {
+			for _, v := range cond.words[0] {
+				if v != "" && text[:len(v)] == v {
+					cond.words[0] = nil
+					break
+				}
+			}
+			if cond.words[0] != nil {
+				return errors.New("the string prefix doesn't match with the given prefix words")
+			}
+		}
+		if cond.word[1] {
+			for _, v := range cond.words[1] {
+				if v != "" && text[textLen-len(v):] == v {
+					cond.words[1] = nil
+					break
+				}
+			}
+			if cond.words[1] != nil {
+				return errors.New("the string suffix doesn't match with the given suffix words")
+			}
+		}
+		if cond.word[2] {
+			for _, v := range cond.words[2] {
+				if v != "" && !strings.Contains(text, v) {
+					return errors.New("the string must contain word: " + v)
+				}
+			}
+		}
+		if cond.word[3] {
+			for _, v := range cond.words[3] {
+				if v != "" && strings.Count(text, v) != 1 {
+					return errors.New("the string must contain word: " + v + ", and it must be appeared once in the string")
+				}
+			}
+		}
+		if cond.word[4] {
+			for _, v := range cond.words[4] {
+				if v != "" && strings.Contains(text, v) {
+					return errors.New("the string must not contain word: " + v)
+				}
+			}
+		}
+		if cond.word[5] {
+			for _, v := range cond.words[5] {
+				if v != "" && text[:len(v)] == v {
+					return errors.New("the string must not contain prefix word: " + v)
+				}
+			}
+		}
+		if cond.word[6] {
+			for _, v := range cond.words[6] {
+				if v != "" && text[textLen-len(v):] == v {
+					return errors.New("the string must not contain suffix word: " + v)
+				}
+			}
+		}
+		if cond.word[7] {
+			for _, v := range cond.words[7] {
+				if v != "" && strings.Count(text, v) > 1 {
+					return errors.New("the word: " + v + ", must be appeared once in the string")
+				}
+			}
 		}
 	}
-
-	for s, _ := range str.mChar["MustContainChars"] {
-		return errors.New(fmt.Sprintf(ErrMustContainChars, s))
-	}
-
 	return nil
 }
 
-func (str *strGo) setMapChar(c []string, cond string) {
-	for _, v := range c {
-		if len(v) != 1 {
-			str.err = errors.New(ErrCharLenMustBeOne)
-			break
+func setCond(conds ...*Condition) *condition {
+	cond := &condition{}
+	for _, v := range conds {
+		cond.minLength = v.MinLength
+		cond.maxLength = v.MaxLength
+		if v.OnlyContains != nil {
+			cond.iterateText = true
+			setASCII(cond, v.OnlyContains, 0)
 		}
-		if _, ok := str.mChar[cond]; !ok {
-			str.mChar[cond] = make(map[string]bool)
+		if v.OnlyContainsPrefix != nil {
+			setASCII(cond, v.OnlyContainsPrefix, 1)
 		}
-		str.mChar[cond][v] = true
-		str.mCond[cond] = append(str.mCond[cond], v)
+		if v.OnlyContainsSuffix != nil {
+			setASCII(cond, v.OnlyContainsSuffix, 2)
+		}
+		if v.MustContains != nil {
+			cond.iterateText = true
+			setASCII(cond, v.MustContains, 3)
+		}
+		if v.MustContainsOnce != nil {
+			cond.iterateText = true
+			setASCIIDouble(cond, v.MustContainsOnce, 3, 7)
+		}
+		if v.MustNotContains != nil {
+			cond.iterateText = true
+			setASCII(cond, v.MustNotContains, 4)
+		}
+		if v.MustNotContainsPrefix != nil {
+			setASCII(cond, v.MustNotContainsPrefix, 5)
+		}
+		if v.MustNotContainsSuffix != nil {
+			setASCII(cond, v.MustNotContainsSuffix, 6)
+		}
+		if v.MayContainsOnce != nil {
+			cond.iterateText = true
+			setASCII(cond, v.MayContainsOnce, 7)
+		}
+		if v.MustBeFollowedBy[0] != nil && v.MustBeFollowedBy[1] != nil {
+			cond.iterateText = true
+			setASCIIIteMustBeFollowedBy(cond, v.MustBeFollowedBy[0], v.MustBeFollowedBy[1])
+		}
+		if v.OnlyContainsPrefixWord != nil {
+			setWord(cond, v.OnlyContainsPrefixWord, 0)
+		}
+		if v.OnlyContainsSuffixWord != nil {
+			setWord(cond, v.OnlyContainsSuffixWord, 1)
+		}
+		if v.MustContainsWord != nil {
+			setWord(cond, v.MustContainsWord, 2)
+		}
+		if v.MustContainsWordOnce != nil {
+			setWord(cond, v.MustContainsWordOnce, 3)
+		}
+		if v.MustNotContainsWord != nil {
+			setWord(cond, v.MustNotContainsWord, 4)
+		}
+		if v.MustNotContainsPrefixWord != nil {
+			setWord(cond, v.MustNotContainsPrefixWord, 5)
+		}
+		if v.MustNotContainsSuffixWord != nil {
+			setWord(cond, v.MustNotContainsSuffixWord, 6)
+		}
+		if v.MayContainsWordOnce != nil {
+			setWord(cond, v.MayContainsWordOnce, 7)
+		}
+	}
+	return cond
+}
+
+func setASCII(cond *condition, c []byte, i byte) {
+	cond.hasAscii = true
+	cond.ascii[i] = true
+	for _, b := range c {
+		cond.asciiC[i][b] = 1
 	}
 }
 
-func (str *strGo) setMapCharMustBeFollowedBy(c []string, fc []string, cond string) {
-	fcm := make(map[string]bool)
-	for _, v := range fc {
-		fcm[v] = true
-	}
-	for _, v := range c {
-		if len(v) != 1 {
-			str.err = errors.New(ErrCharLenMustBeOne)
-			break
-		}
-		if _, ok := str.mChar[cond+v]; !ok {
-			str.mChar[cond+v] = make(map[string]bool)
-		}
-		str.mChar[cond+v] = fcm
-		str.mCond[cond+v] = append(str.mCond[cond+v], fc...)
+func setASCIIDouble(cond *condition, c []byte, i, i2 byte) {
+	cond.hasAscii = true
+	cond.ascii[i] = true
+	cond.ascii[i2] = true
+	for _, b := range c {
+		cond.asciiC[i][b] = 1
+		cond.asciiC[i2][b] = 1
 	}
 }
 
-func (str *strGo) setMapWord(w []string, cond string) {
-	for _, v := range w {
-		if _, ok := str.mWord[v]; !ok {
-			str.mWord[v] = make(map[string]bool)
-		}
-		str.mWord[v][cond] = true
-		str.mCond[cond] = append(str.mCond[cond], v)
+func setASCIIIteMustBeFollowedBy(cond *condition, c, fc []byte) {
+	cond.hasAscii = true
+	cond.ascii[8] = true
+	for _, b := range c {
+		cond.asciiMustBeFollowedBy[b] = append(cond.asciiMustBeFollowedBy[b], fc...)
 	}
+}
+
+func setWord(cond *condition, w []string, i byte) {
+	cond.hasWord = true
+	cond.word[i] = true
+	cond.words[i] = append(cond.words[i], w...)
 }

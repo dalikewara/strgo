@@ -30,16 +30,15 @@ This is an example to validate a `username` string:
 
 ```go
 var validate = func(username string) error {
-    return strgo.New(username).
-        OnlyContainChars(strgo.ALPHANUMERIC).
-        MinLength(3).
-        MaxLength(20).
-        OnlyContainChars([]string{"_", "."}).
-        MustBeFollowedByChars([]string{"_", "."}, strgo.ALPHANUMERIC).
-        MustNotContainPrefixChars([]string{"_", "."}).
-        MustNotContainSuffixChars([]string{"_", "."}).
-        MayContainCharsOnce([]string{"_", "."}).
-        Validate()
+    return strgo.Validate(username, &strgo.Condition{
+        MinLength:        3,
+        MaxLength:        20,
+        OnlyContains:     strgo.AlphanumericByte,
+        MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
+        MayContainsOnce:  []byte{'_', '.'},
+    }, &strgo.Condition{
+        OnlyContains: []byte{'_', '.'},
+    })
 }
 
 validate("johndoe") // valid
@@ -78,16 +77,15 @@ validate("joh.nd.oe") // not valid
 
 ```go
 var validate = func(email string) error {
-    return strgo.New(email).
-        MinLength(4).
-        MaxLength(255).
-        OnlyContainChars(strgo.ALPHANUMERIC).
-        OnlyContainChars([]string{"_", ".", "@", "-", "+"}).
-        MustBeFollowedByChars([]string{"_", ".", "@", "-", "+"}, strgo.ALPHANUMERIC).
-        MustNotContainPrefixChars([]string{"_", ".", "@", "-", "+"}).
-        MustNotContainSuffixChars([]string{"_", ".", "@", "-", "+"}).
-        MustContainCharsOnce([]string{"@"}).
-        Validate()
+    return strgo.Validate(email, &strgo.Condition{
+        MinLength:        4,
+        MaxLength:        255,
+        OnlyContains:     strgo.AlphanumericByte,
+        MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
+        MustContainsOnce: []byte{'@'},
+    }, &strgo.Condition{
+        OnlyContains: []byte{'_', '.', '@', '-', '+'},
+    })
 }
 err := validate("johndoe@email.com") // valid
 err = validate("john_doe@email.com") // valid

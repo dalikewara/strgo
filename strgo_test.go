@@ -1,198 +1,280 @@
 package strgo_test
 
 import (
-	"fmt"
 	"github.com/dalikewara/strgo"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	str := strgo.New("johndoe")
-	assert.Implements(t, (*strgo.StrGo)(nil), str)
-}
-
-func TestStrGo_Validate(t *testing.T) {
-	err := strgo.New("johndoe").Validate()
-	assert.Nil(t, err)
-	err = strgo.New("").Validate()
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, strgo.ErrEmpty)
-}
-
 func TestStrGo_MinLength(t *testing.T) {
-	err := strgo.New("johndoe").MinLength(7).Validate()
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MinLength: 7,
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MinLength(8).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MinLength: 8,
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMinLength, 8))
+	assert.EqualError(t, err, "the string length cannot be less than 8")
 }
 
 func TestStrGo_MaxLength(t *testing.T) {
-	err := strgo.New("johndoe").MaxLength(7).Validate()
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MaxLength: 7,
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MaxLength(6).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MaxLength: 6,
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMaxLength, 6))
+	assert.EqualError(t, err, "the string length cannot be more than 6")
 }
 
-func TestStrGo_OnlyContainChars(t *testing.T) {
-	err := strgo.New("johndoe").OnlyContainChars([]string{"j", "o", "h", "n", "d", "e"}).Validate()
+func TestStrGo_OnlyContains(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContains: []byte{'j', 'o', 'h', 'n', 'd', 'e'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").OnlyContainChars([]string{"j", "o", "h", "n", "d"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContains: []byte{'j', 'o', 'h', 'n', 'd'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainChars, "e"))
+	assert.EqualError(t, err, "the string cannot contain char: e")
 }
 
-func TestStrGo_OnlyContainPrefixChars(t *testing.T) {
-	err := strgo.New("johndoe").OnlyContainPrefixChars([]string{"o", "j"}).Validate()
+func TestStrGo_OnlyContainsPrefix(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsPrefix: []byte{'o', 'j'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").OnlyContainPrefixChars([]string{"o", "k"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsPrefix: []byte{'o', 'k'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainPrefixChars, "j"))
+	assert.EqualError(t, err, "the string cannot contain prefix char: j")
 }
 
-func TestStrGo_OnlyContainSuffixChars(t *testing.T) {
-	err := strgo.New("johndoe").OnlyContainSuffixChars([]string{"o", "e"}).Validate()
+func TestStrGo_OnlyContainsSuffix(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsSuffix: []byte{'o', 'e'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").OnlyContainSuffixChars([]string{"o", "k"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsSuffix: []byte{'o', 'k'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainSuffixChars, "e"))
+	assert.EqualError(t, err, "the string cannot contain suffix char: e")
 }
 
-func TestStrGo_OnlyContainPrefixWords(t *testing.T) {
-	err := strgo.New("johndoe").OnlyContainPrefixWords([]string{"hn", "joh"}).Validate()
+func TestStrGo_OnlyContainsPrefixWord(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsPrefixWord: []string{"hn", "joh"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").OnlyContainPrefixWords([]string{"noh", "koh"}).OnlyContainPrefixWords([]string{"noh2", "koh2"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsPrefixWord: []string{"noh", "koh"},
+	}, &strgo.Condition{
+		OnlyContainsPrefixWord: []string{"noh2", "koh2"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainPrefixWords, "[noh koh noh2 koh2]"))
+	assert.EqualError(t, err, "the string prefix doesn't match with the given prefix words")
 }
 
-func TestStrGo_OnlyContainSuffixWords(t *testing.T) {
-	err := strgo.New("johndoe").OnlyContainSuffixWords([]string{"eo", "oe"}).Validate()
+func TestStrGo_OnlyContainsSuffixWord(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsSuffixWord: []string{"eo", "oe"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").OnlyContainSuffixWords([]string{"ne", "ho"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		OnlyContainsSuffixWord: []string{"ne", "ho"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrOnlyContainSuffixWords, "[ne ho]"))
+	assert.EqualError(t, err, "the string suffix doesn't match with the given suffix words")
 }
 
-func TestStrGo_MustContainChars(t *testing.T) {
-	err := strgo.New("johndoe").MustContainChars([]string{"n", "h"}).Validate()
+func TestStrGo_MustContains(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustContains: []byte{'n', 'h'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustContainChars([]string{"n", "k"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustContains: []byte{'n', 'k'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainChars, "k"))
+	assert.EqualError(t, err, "the string must contain char: k")
 }
 
-func TestStrGo_MustContainWords(t *testing.T) {
-	err := strgo.New("johndoe").MustContainWords([]string{"john", "hnd"}).Validate()
+func TestStrGo_MustContainsWord(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsWord: []string{"john", "hnd"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustContainWords([]string{"ohn", "de"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsWord: []string{"ohn", "de"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainWords, "de"))
+	assert.EqualError(t, err, "the string must contain word: de")
 }
 
-func TestStrGo_MustContainCharsOnce(t *testing.T) {
-	err := strgo.New("johndoe").MustContainCharsOnce([]string{"n", "h"}).Validate()
+func TestStrGo_MustContainsOnce(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsOnce: []byte{'n', 'h'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustContainCharsOnce([]string{"n", "k"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsOnce: []byte{'n', 'd', 'h', 'k'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainChars, "k"))
-	err = strgo.New("johndoe").MustContainCharsOnce([]string{"n", "o"}).Validate()
+	assert.EqualError(t, err, "the string must contain char: k")
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsOnce: []byte{'n', 'o'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMayContainCharsOnce, "o"))
+	assert.EqualError(t, err, "the char: o, must be appeared once in the string")
 }
 
-func TestStrGo_MustContainWordsOnce(t *testing.T) {
-	err := strgo.New("johndoe").MustContainWordsOnce([]string{"john", "hnd"}).Validate()
+func TestStrGo_MustContainsWordOnce(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsWordOnce: []string{"john", "hnd"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustContainWordsOnce([]string{"ohn", "de"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustContainsWordOnce: []string{"ohn", "de"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustContainWords, "de"))
-	err = strgo.New("johndoedoe").MustContainWordsOnce([]string{"ohn", "doe"}).Validate()
+	assert.EqualError(t, err, "the string must contain word: de, and it must be appeared once in the string")
+	err = strgo.Validate("johndoedoe", &strgo.Condition{
+		MustContainsWordOnce: []string{"ohn", "doe"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMayContainWordsOnce, "doe"))
+	assert.EqualError(t, err, "the string must contain word: doe, and it must be appeared once in the string")
 }
 
-func TestStrGo_MustNotContainChars(t *testing.T) {
-	err := strgo.New("johndoe").MustNotContainChars([]string{"k", "r"}).Validate()
+func TestStrGo_MustNotContains(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContains: []byte{'k', 'r'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustNotContainChars([]string{"k", "e"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContains: []byte{'k', 'e'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainChars, "e"))
+	assert.EqualError(t, err, "the string must not contain char: e")
 }
 
-func TestStrGo_MustNotContainWords(t *testing.T) {
-	err := strgo.New("johndoe").MustNotContainWords([]string{"dor", "johk"}).Validate()
+func TestStrGo_MustNotContainsWord(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsWord: []string{"dor", "johk"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustNotContainWords([]string{"hng", "ohn"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsWord: []string{"hng", "ohn"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainWords, "ohn"))
+	assert.EqualError(t, err, "the string must not contain word: ohn")
 }
 
-func TestStrGo_MustNotContainPrefixChars(t *testing.T) {
-	err := strgo.New("johndoe").MustNotContainPrefixChars([]string{"o", "h"}).Validate()
+func TestStrGo_MustNotContainsPrefix(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsPrefix: []byte{'o', 'h'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustNotContainPrefixChars([]string{"o", "j"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsPrefix: []byte{'o', 'j'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainPrefixChars, "j"))
+	assert.EqualError(t, err, "the string must not contain prefix: j")
 }
 
-func TestStrGo_MustNotContainSuffixChars(t *testing.T) {
-	err := strgo.New("johndoe").MustNotContainSuffixChars([]string{"o", "h"}).Validate()
+func TestStrGo_MustNotContainsSuffix(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsSuffix: []byte{'o', 'h'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustNotContainSuffixChars([]string{"o", "e"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsSuffix: []byte{'o', 'e'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainSuffixChars, "e"))
+	assert.EqualError(t, err, "the string must not contain suffix: e")
 }
 
-func TestStrGo_MustNotContainPrefixWords(t *testing.T) {
-	err := strgo.New("johndoe").MustNotContainPrefixWords([]string{"hn", "koh"}).Validate()
+func TestStrGo_MustNotContainsPrefixWord(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsPrefixWord: []string{"hn", "koh"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustNotContainPrefixWords([]string{"noh", "joh"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsPrefixWord: []string{"noh", "joh"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainPrefixWords, "joh"))
+	assert.EqualError(t, err, "the string must not contain prefix word: joh")
 }
 
-func TestStrGo_MustNotContainSuffixWords(t *testing.T) {
-	err := strgo.New("johndoe").MustNotContainSuffixWords([]string{"eo", "ode"}).Validate()
+func TestStrGo_MustNotContainsSuffixWord(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsSuffixWord: []string{"eo", "ode"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MustNotContainSuffixWords([]string{"doe", "joh"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustNotContainsSuffixWord: []string{"doe", "joh"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustNotContainSuffixWords, "doe"))
+	assert.EqualError(t, err, "the string must not contain suffix word: doe")
 }
 
-func TestStrGo_MustBeFollowedByChars(t *testing.T) {
-	err := strgo.New("johndoe").MustBeFollowedByChars([]string{"h", "d"}, []string{"m", "n", "o"}).Validate()
+func TestStrGo_MayContainsOnce(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MayContainsOnce: []byte{'k', 'r', 'h', 'n', 'j', 'd'},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoeooedoe").MustBeFollowedByChars([]string{"o"}, []string{"e", "o", "d", "j", "h"}).MustBeFollowedByChars([]string{"d"}, []string{"e", "o"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MayContainsOnce: []byte{'k', 'o'},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "d", "[e o]"))
-	err = strgo.New("johndoe").MustBeFollowedByChars([]string{"h", "o"}, []string{"d", "k", "l"}).Validate()
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "o", "[d k l]"))
-	err = strgo.New("johndoe").MustBeFollowedByChars([]string{"h", "o"}, []string{"d", "k", "j"}).Validate()
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "o", "[d k j]"))
-	err = strgo.New("johndoe").MustBeFollowedByChars([]string{"o", "n"}, strgo.ALPHABETIC).MustBeFollowedByChars([]string{"d"}, []string{"r", "m"}).Validate()
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMustBeFollowedByChars, "d", "[r m]"))
+	assert.EqualError(t, err, "the char: o, must be appeared once in the string")
 }
 
-func TestStrGo_MayContainCharsOnce(t *testing.T) {
-	err := strgo.New("johndoe").MayContainCharsOnce([]string{"k", "r"}).Validate()
+func TestStrGo_MayContainsWordOnce(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MayContainsWordOnce: []string{"khn", "rhn"},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoe").MayContainCharsOnce([]string{"k", "o"}).Validate()
+	err = strgo.Validate("johndoedoe", &strgo.Condition{
+		MayContainsWordOnce: []string{"khn", "doe"},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMayContainCharsOnce, "o"))
+	assert.EqualError(t, err, "the word: doe, must be appeared once in the string")
 }
 
-func TestStrGo_MayContainWordsOnce(t *testing.T) {
-	err := strgo.New("johndoe").MayContainWordsOnce([]string{"khn", "rhn"}).Validate()
+func TestStrGo_MustBeFollowedBy(t *testing.T) {
+	err := strgo.Validate("johndoe", &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'h', 'd'}, {'m', 'n', 'o'}},
+	})
 	assert.Nil(t, err)
-	err = strgo.New("johndoedoe").MayContainWordsOnce([]string{"khn", "doe"}).Validate()
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'o'}, {'e', 'o', 'd', 'j', 'h'}},
+	}, &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'d'}, {'e', 'o'}},
+	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, fmt.Sprintf(strgo.ErrMayContainWordsOnce, "doe"))
+	assert.EqualError(t, err, "the char: d, must be followed with at least one of these characters: eo")
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'h', 'o'}, {'d', 'k', 'l'}},
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the char: o, must be followed with at least one of these characters: dkl")
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'h', 'o'}, {'d', 'k', 'j'}},
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the char: o, must be followed with at least one of these characters: dkj")
+	err = strgo.Validate("johndoe", &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'o', 'n'}, strgo.AlphabeticByte},
+	}, &strgo.Condition{
+		MustBeFollowedBy: [2][]byte{{'d'}, {'r', 'm'}},
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the char: d, must be followed with at least one of these characters: rm")
 }
 
 func TestUsername(t *testing.T) {
@@ -204,16 +286,15 @@ func TestUsername(t *testing.T) {
 		- allowed special characters must be appeared once in the string
 	*/
 	var validate = func(username string) error {
-		return strgo.New(username).
-			OnlyContainChars(strgo.ALPHANUMERIC).
-			MinLength(3).
-			MaxLength(20).
-			OnlyContainChars([]string{"_", "."}).
-			MustBeFollowedByChars([]string{"_", "."}, strgo.ALPHANUMERIC).
-			MustNotContainPrefixChars([]string{"_", "."}).
-			MustNotContainSuffixChars([]string{"_", "."}).
-			MayContainCharsOnce([]string{"_", "."}).
-			Validate()
+		return strgo.Validate(username, &strgo.Condition{
+			MinLength:        3,
+			MaxLength:        20,
+			OnlyContains:     strgo.AlphanumericByte,
+			MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
+			MayContainsOnce:  []byte{'_', '.'},
+		}, &strgo.Condition{
+			OnlyContains: []byte{'_', '.'},
+		})
 	}
 	err := validate("johndoe")
 	assert.Nil(t, err)
@@ -274,16 +355,15 @@ func TestEmail(t *testing.T) {
 		- must contain char @ and must be appeared once in the string
 	*/
 	var validate = func(email string) error {
-		return strgo.New(email).
-			MinLength(4).
-			MaxLength(255).
-			OnlyContainChars(strgo.ALPHANUMERIC).
-			OnlyContainChars([]string{"_", ".", "@", "-", "+"}).
-			MustBeFollowedByChars([]string{"_", ".", "@", "-", "+"}, strgo.ALPHANUMERIC).
-			MustNotContainPrefixChars([]string{"_", ".", "@", "-", "+"}).
-			MustNotContainSuffixChars([]string{"_", ".", "@", "-", "+"}).
-			MustContainCharsOnce([]string{"@"}).
-			Validate()
+		return strgo.Validate(email, &strgo.Condition{
+			MinLength:        4,
+			MaxLength:        255,
+			OnlyContains:     strgo.AlphanumericByte,
+			MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
+			MustContainsOnce: []byte{'@'},
+		}, &strgo.Condition{
+			OnlyContains: []byte{'_', '.', '@', '-', '+'},
+		})
 	}
 	err := validate("johndoe@email.com")
 	assert.Nil(t, err)

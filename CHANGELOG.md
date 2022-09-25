@@ -2,6 +2,10 @@
 
 ### 2022
 
+- v1.3.0 (2022-09-25)
+  - change function form 
+  - optimize validate logic
+
 - v1.2.2 (2022-09-23)
   - optimize validate logic
 
