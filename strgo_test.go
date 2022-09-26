@@ -72,9 +72,7 @@ func TestStrGo_OnlyContainsPrefixWord(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	err = strgo.Validate("johndoe", &strgo.Condition{
-		OnlyContainsPrefixWord: []string{"noh", "koh"},
-	}, &strgo.Condition{
-		OnlyContainsPrefixWord: []string{"noh2", "koh2"},
+		OnlyContainsPrefixWord: []string{"noh", "koh", "noh2", "koh2"},
 	})
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "the string prefix doesn't match with the given prefix words")
@@ -252,12 +250,10 @@ func TestStrGo_MustBeFollowedBy(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	err = strgo.Validate("johndoe", &strgo.Condition{
-		MustBeFollowedBy: [2][]byte{{'o'}, {'e', 'o', 'd', 'j', 'h'}},
-	}, &strgo.Condition{
-		MustBeFollowedBy: [2][]byte{{'d'}, {'e', 'o'}},
+		MustBeFollowedBy: [2][]byte{{'o', 'd'}, {'e', 'o', 'd', 'j', 'h'}},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the char: d, must be followed with at least one of these characters: eo")
+	assert.EqualError(t, err, "the char: d, must be followed with at least one of these characters: eodjh")
 	err = strgo.Validate("johndoe", &strgo.Condition{
 		MustBeFollowedBy: [2][]byte{{'h', 'o'}, {'d', 'k', 'l'}},
 	})
@@ -268,13 +264,6 @@ func TestStrGo_MustBeFollowedBy(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "the char: o, must be followed with at least one of these characters: dkj")
-	err = strgo.Validate("johndoe", &strgo.Condition{
-		MustBeFollowedBy: [2][]byte{{'o', 'n'}, strgo.AlphabeticByte},
-	}, &strgo.Condition{
-		MustBeFollowedBy: [2][]byte{{'d'}, {'r', 'm'}},
-	})
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the char: d, must be followed with at least one of these characters: rm")
 }
 
 func TestUsername(t *testing.T) {
@@ -289,11 +278,9 @@ func TestUsername(t *testing.T) {
 		return strgo.Validate(username, &strgo.Condition{
 			MinLength:        3,
 			MaxLength:        20,
-			OnlyContains:     strgo.AlphanumericByte,
+			OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
 			MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
 			MayContainsOnce:  []byte{'_', '.'},
-		}, &strgo.Condition{
-			OnlyContains: []byte{'_', '.'},
 		})
 	}
 	err := validate("johndoe")
@@ -358,11 +345,9 @@ func TestEmail(t *testing.T) {
 		return strgo.Validate(email, &strgo.Condition{
 			MinLength:        4,
 			MaxLength:        255,
-			OnlyContains:     strgo.AlphanumericByte,
+			OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
 			MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
 			MustContainsOnce: []byte{'@'},
-		}, &strgo.Condition{
-			OnlyContains: []byte{'_', '.', '@', '-', '+'},
 		})
 	}
 	err := validate("johndoe@email.com")

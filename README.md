@@ -33,11 +33,9 @@ var validate = func(username string) error {
     return strgo.Validate(username, &strgo.Condition{
         MinLength:        3,
         MaxLength:        20,
-        OnlyContains:     strgo.AlphanumericByte,
+        OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
         MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
         MayContainsOnce:  []byte{'_', '.'},
-    }, &strgo.Condition{
-        OnlyContains: []byte{'_', '.'},
     })
 }
 
@@ -80,11 +78,9 @@ var validate = func(email string) error {
     return strgo.Validate(email, &strgo.Condition{
         MinLength:        4,
         MaxLength:        255,
-        OnlyContains:     strgo.AlphanumericByte,
+        OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
         MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
         MustContainsOnce: []byte{'@'},
-    }, &strgo.Condition{
-        OnlyContains: []byte{'_', '.', '@', '-', '+'},
     })
 }
 err := validate("johndoe@email.com") // valid
