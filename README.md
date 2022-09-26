@@ -30,7 +30,7 @@ This is an example to validate a `username` string:
 
 ```go
 var validate = func(username string) error {
-    return strgo.Validate(username, &strgo.Condition{
+    return strgo.Bytes([]byte(username), &strgo.BytesCondition{
         MinLength:        3,
         MaxLength:        20,
         OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
@@ -75,7 +75,7 @@ validate("joh.nd.oe") // not valid
 
 ```go
 var validate = func(email string) error {
-    return strgo.Validate(email, &strgo.Condition{
+    return strgo.Bytes([]byte(email), &strgo.BytesCondition{
         MinLength:        4,
         MaxLength:        255,
         OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),

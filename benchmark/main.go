@@ -19,32 +19,10 @@ func main() {
 	log.Printf("					text len 	= %v", len(text))
 	log.Println("					elapsed time	= ns/nanoseconds < µs/microseconds")
 
-	start := time.Now()
-	err := strgo.Validate(text, &strgo.Condition{
-		OnlyContains:              append(text2Byte, strgo.SpecialCharsByte...),
-		OnlyContainsPrefix:        text2Byte,
-		OnlyContainsSuffix:        text2Byte,
-		OnlyContainsPrefixWord:    words,
-		OnlyContainsSuffixWord:    words,
-		MustContains:              strgo.AlphanumericByte,
-		MustContainsWord:          words,
-		MustContainsOnce:          []byte{'+'},
-		MustContainsWordOnce:      []string{"+olo", "met.con", "lit.abcde", "4321seddoei"},
-		MustNotContains:           strgo.BracketsByte,
-		MustNotContainsWord:       []string{"+olo2", "met.con2", "lit.abcde2", "4321seddoei2"},
-		MustNotContainsPrefix:     strgo.SpecialCharsByte,
-		MustNotContainsSuffix:     strgo.SpecialCharsByte,
-		MustNotContainsPrefixWord: []string{"+olo", "met.con", "lit.abcde", "4321seddoei"},
-		MustNotContainsSuffixWord: []string{"+olo", "met.con", "lit.abcde", "4321seddoei"},
-		MayContainsOnce:           []byte{'+'},
-		MayContainsWordOnce:       []string{"+olo", "met.con", "lit.abcde", "4321seddoei"},
-		MustBeFollowedBy:          [2][]byte{strgo.SpecialCharsByte, strgo.CharsByte},
-	})
-	elapsed := time.Since(start)
-	log.Printf("all conditions set 					%s %v", elapsed, err)
+	// bytes
 
-	start = time.Now()
-	err = strgo.Validate(text, &strgo.Condition{
+	start := time.Now()
+	err := strgo.Bytes([]byte(text), &strgo.BytesCondition{
 		OnlyContains:          append(text2Byte, strgo.SpecialCharsByte...),
 		OnlyContainsPrefix:    text2Byte,
 		OnlyContainsSuffix:    text2Byte,
@@ -56,11 +34,35 @@ func main() {
 		MayContainsOnce:       []byte{'+'},
 		MustBeFollowedBy:      [2][]byte{strgo.SpecialCharsByte, strgo.CharsByte},
 	})
-	elapsed = time.Since(start)
-	log.Printf("all bytes/chars conditions set 			%s %v", elapsed, err)
+	elapsed := time.Since(start)
+	log.Printf("strgo bytes 					%s %v", elapsed, err)
 
 	start = time.Now()
-	err = strgo.Validate(text, &strgo.Condition{
+	err = strgo.Bytes([]byte("john_doe.123"), &strgo.BytesCondition{
+		MinLength:        3,
+		MaxLength:        20,
+		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
+		MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
+		MayContainsOnce:  []byte{'_', '.'},
+	})
+	elapsed = time.Since(start)
+	log.Printf("strgo bytes username (john_doe.123) 		%s %v", elapsed, err)
+
+	start = time.Now()
+	err = strgo.Bytes([]byte("john+doe123@email"), &strgo.BytesCondition{
+		MinLength:        4,
+		MaxLength:        255,
+		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
+		MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
+		MustContainsOnce: []byte{'@'},
+	})
+	elapsed = time.Since(start)
+	log.Printf("strgo bytes email (john+doe123@email) 		%s %v", elapsed, err)
+
+	// string
+
+	start = time.Now()
+	err = strgo.String(text, &strgo.StringCondition{
 		OnlyContainsPrefixWord:    words,
 		OnlyContainsSuffixWord:    words,
 		MustContainsWord:          words,
@@ -71,29 +73,9 @@ func main() {
 		MayContainsWordOnce:       []string{"+olo", "met.con", "lit.abcde", "4321seddoei"},
 	})
 	elapsed = time.Since(start)
-	log.Printf("all words conditions set 				%s %v", elapsed, err)
+	log.Printf("strgo string 					%s %v", elapsed, err)
 
-	start = time.Now()
-	err = strgo.Validate("john_doe.123", &strgo.Condition{
-		MinLength:        3,
-		MaxLength:        20,
-		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
-		MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
-		MayContainsOnce:  []byte{'_', '.'},
-	})
-	elapsed = time.Since(start)
-	log.Printf("username (john_doe.123) conditions set 		%s %v", elapsed, err)
-
-	start = time.Now()
-	err = strgo.Validate("john+doe123@email", &strgo.Condition{
-		MinLength:        4,
-		MaxLength:        255,
-		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
-		MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
-		MustContainsOnce: []byte{'@'},
-	})
-	elapsed = time.Since(start)
-	log.Printf("email (john+doe123@email) conditions set 		%s %v", elapsed, err)
+	// regex
 
 	start = time.Now()
 	regex, _ := regexp.Compile(r1)
@@ -111,11 +93,11 @@ func main() {
 	regex, _ = regexp.Compile(r1)
 	_ = regex.MatchString("john_doe.123")
 	elapsed = time.Since(start)
-	log.Printf("username (john_doe.123) regex			%s", elapsed)
+	log.Printf("regex username (john_doe.123)			%s", elapsed)
 
 	start = time.Now()
 	regex, _ = regexp.Compile(r2)
 	_ = regex.MatchString("john+doe123@email")
 	elapsed = time.Since(start)
-	log.Printf("email (john+doe123@email) regex			%s", elapsed)
+	log.Printf("regex email (john+doe123@email)			%s", elapsed)
 }
