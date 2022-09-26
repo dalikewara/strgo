@@ -2,7 +2,8 @@
 
 ### 2022
 
-- v1.4.0 - v1.5.0 (2022-09-26)
+- v1.4.0 - v1.5.1 (2022-09-26)
+  - add proper benchmark
   - seperate validate function to `Bytes` and `String`
   - optimize validate logic
 
