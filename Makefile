@@ -7,5 +7,5 @@ test: ## run test cases
 	@cat test.out
 
 test-benchmark: ## run benchmark
-	@go test -bench=. > benchmark.out
+	@go test -bench=. -benchmem > benchmark.out
 	@cat benchmark.out

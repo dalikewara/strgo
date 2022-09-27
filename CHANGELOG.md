@@ -2,7 +2,7 @@
 
 ### 2022
 
-- v1.6.0 - v1.6.1 (2022-09-27)
+- v1.6.0 - v1.6.2 (2022-09-27)
   - optimize `Byte` validate logic
   - change function `Bytes` to `Byte` and change its first param from `[]byte` to `string`
   - this function now save to validate only ASCII characters
