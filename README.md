@@ -29,8 +29,8 @@ This is an example to validate a `username` string:
 - allowed special characters must be appeared once in the string
 
 ```go
-var validate = func(username string) error {
-    return strgo.Bytes([]byte(username), &strgo.BytesCondition{
+func validate(username string) error {
+    return strgo.Byte(username, &strgo.ByteCondition{
         MinLength:        3,
         MaxLength:        20,
         OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
@@ -74,8 +74,8 @@ validate("joh.nd.oe") // not valid
 - must contain char `@` and must be appeared once in the string
 
 ```go
-var validate = func(email string) error {
-    return strgo.Bytes([]byte(email), &strgo.BytesCondition{
+func validate(email string) error {
+    return strgo.Byte(email, &strgo.ByteCondition{
         MinLength:        4,
         MaxLength:        255,
         OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
@@ -83,22 +83,22 @@ var validate = func(email string) error {
         MustContainsOnce: []byte{'@'},
     })
 }
-err := validate("johndoe@email.com") // valid
-err = validate("john_doe@email.com") // valid
-err = validate("john_do.e@email.com") // valid
-err = validate("john-doe@email.com") // valid
-err = validate("johndoe@email") // valid
-err = validate("johndoe123@email") // valid
-err = validate("johndoe123@email") // valid
-err = validate("john+doe123@email") // valid
-err = validate("johndoe123email") // not valid
-err = validate("johndoe123.email") // not valid
-err = validate("john@doe123@email") // not valid
-err = validate(".johndoe123@email") // not valid
-err = validate("johndoe123@email.") // not valid
-err = validate("johndoe123@") // not valid
-err = validate("john_.doe123@email") // not valid
-err = validate("johndoe123.@email") // not valid
+validate("johndoe@email.com") // valid
+validate("john_doe@email.com") // valid
+validate("john_do.e@email.com") // valid
+validate("john-doe@email.com") // valid
+validate("johndoe@email") // valid
+validate("johndoe123@email") // valid
+validate("johndoe123@email") // valid
+validate("john+doe123@email") // valid
+validate("johndoe123email") // not valid
+validate("johndoe123.email") // not valid
+validate("john@doe123@email") // not valid
+validate(".johndoe123@email") // not valid
+validate("johndoe123@email.") // not valid
+validate("johndoe123@") // not valid
+validate("john_.doe123@email") // not valid
+validate("johndoe123.@email") // not valid
 ```
 
 ## Release

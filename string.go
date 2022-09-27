@@ -19,7 +19,7 @@ type StringCondition struct {
 	MayContainsWordOnce       []string
 }
 
-// String matches the string based on the given condition.
+// String matches the string based on the StringCondition.
 // If one doesn't match, it will return an error.
 func String(text string, cond *StringCondition) error {
 	if text == "" {

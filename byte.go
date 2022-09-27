@@ -6,7 +6,11 @@ import (
 	"strconv"
 )
 
-type BytesCondition struct {
+const asciiMaxDecInt32 = int32(254)
+
+type asciis [255]byte
+
+type ByteCondition struct {
 	MinLength             int
 	MaxLength             int
 	OnlyContains          []byte
@@ -21,32 +25,55 @@ type BytesCondition struct {
 	MustBeFollowedBy      [2][]byte
 }
 
-// Bytes matches the bytes based on the given condition.
+// Byte matches the string based on the ByteCondition.
 // If one doesn't match, it will return an error.
-func Bytes(text []byte, cond *BytesCondition) error {
-	bytesLen := len(text)
-
-	if bytesLen < 1 {
-		return errors.New("the bytes is empty")
-	}
-	if cond.MinLength > 0 && bytesLen < cond.MinLength {
-		return errors.New("the bytes length cannot be less than " + strconv.Itoa(cond.MinLength))
-	}
-	if cond.MaxLength > 0 && bytesLen > cond.MaxLength {
-		return errors.New("the bytes length cannot be more than " + strconv.Itoa(cond.MaxLength))
+// This function can only validate ASCII characters.
+func Byte(text string, cond *ByteCondition) error {
+	if text == "" {
+		return errors.New("the string is empty")
 	}
 
-	if cond.OnlyContainsPrefix != nil && bytes.IndexByte(cond.OnlyContainsPrefix, text[0]) < 0 {
-		return errors.New("the bytes cannot contain prefix char: " + string(text[0]))
+	if cond.MinLength > 0 && len(text) < cond.MinLength {
+		return errors.New("the string length cannot be less than " + strconv.Itoa(cond.MinLength))
 	}
-	if cond.OnlyContainsSuffix != nil && bytes.IndexByte(cond.OnlyContainsSuffix, text[bytesLen-1]) < 0 {
-		return errors.New("the bytes cannot contain suffix char: " + string(text[bytesLen-1]))
+	if cond.MaxLength > 0 && len(text) > cond.MaxLength {
+		return errors.New("the string length cannot be more than " + strconv.Itoa(cond.MaxLength))
 	}
-	if cond.MustNotContainsPrefix != nil && bytes.IndexByte(cond.MustNotContainsPrefix, text[0]) >= 0 {
-		return errors.New("the bytes must not contain prefix: " + string(text[0]))
+
+	runes := []rune(text)
+	runesLen := len(runes)
+
+	if cond.OnlyContainsPrefix != nil {
+		if runes[0] > asciiMaxDecInt32 {
+			return errors.New("the char: " + string(runes[0]) + ", is not a valid ascii format")
+		}
+		if bytes.IndexRune(cond.OnlyContainsPrefix, runes[0]) < 0 {
+			return errors.New("the string cannot contain prefix char: " + string(runes[0]))
+		}
 	}
-	if cond.MustNotContainsSuffix != nil && bytes.IndexByte(cond.MustNotContainsSuffix, text[bytesLen-1]) >= 0 {
-		return errors.New("the bytes must not contain suffix: " + string(text[bytesLen-1]))
+	if cond.OnlyContainsSuffix != nil {
+		if runes[0] > asciiMaxDecInt32 {
+			return errors.New("the char: " + string(runes[0]) + ", is not a valid ascii format")
+		}
+		if bytes.IndexRune(cond.OnlyContainsSuffix, runes[runesLen-1]) < 0 {
+			return errors.New("the string cannot contain suffix char: " + string(runes[runesLen-1]))
+		}
+	}
+	if cond.MustNotContainsPrefix != nil {
+		if runes[0] > asciiMaxDecInt32 {
+			return errors.New("the char: " + string(runes[0]) + ", is not a valid ascii format")
+		}
+		if bytes.IndexRune(cond.MustNotContainsPrefix, runes[0]) >= 0 {
+			return errors.New("the string must not contain prefix: " + string(runes[0]))
+		}
+	}
+	if cond.MustNotContainsSuffix != nil {
+		if runes[0] > asciiMaxDecInt32 {
+			return errors.New("the char: " + string(runes[0]) + ", is not a valid ascii format")
+		}
+		if bytes.IndexRune(cond.MustNotContainsSuffix, runes[runesLen-1]) >= 0 {
+			return errors.New("the string must not contain suffix: " + string(runes[runesLen-1]))
+		}
 	}
 
 	var (
@@ -56,7 +83,7 @@ func Bytes(text []byte, cond *BytesCondition) error {
 		mustNotContains,
 		mustBeFollowedBy,
 		mustBeFollowedByPairs,
-		mayContainsOnce [255]byte
+		mayContainsOnce asciis
 	)
 
 	if cond.OnlyContains != nil {
@@ -101,30 +128,33 @@ func Bytes(text []byte, cond *BytesCondition) error {
 	}
 
 	if iterateText {
-		for i, v := range text {
+		for i, v := range runes {
+			if v > asciiMaxDecInt32 {
+				return errors.New("the char: " + string(v) + ", is not a valid ascii format")
+			}
 			if cond.OnlyContains != nil && onlyContains[v] < 1 {
-				return errors.New("the bytes cannot contain char: " + string(byte(v)))
+				return errors.New("the string cannot contain char: " + string(v))
 			}
 			if cond.MustNotContains != nil && mustNotContains[v] > 0 {
-				return errors.New("the bytes must not contain char: " + string(byte(v)))
+				return errors.New("the string must not contain char: " + string(v))
 			}
 			if (cond.MustContains != nil || cond.MustContainsOnce != nil) && mustContains[v] > 0 {
 				mustContains[v] = 0
 			}
 			if (cond.MayContainsOnce != nil || cond.MustContainsOnce != nil) && mayContainsOnce[v] > 0 {
 				if mayContainsOnce[v] > 1 {
-					return errors.New("the char: " + string(v) + ", must be appeared once in the bytes")
+					return errors.New("the char: " + string(v) + ", must be appeared once in the string")
 				}
 				mayContainsOnce[v] += 1
 			}
 			if cond.MustBeFollowedBy[0] != nil && cond.MustBeFollowedBy[1] != nil && mustBeFollowedBy[v] > 0 {
-				if i == 0 || (i+1) == bytesLen {
+				if i == 0 || (i+1) == runesLen {
 					return errors.New("the char: " + string(v) + ", must be followed with at least one of these characters: " + string(cond.MustBeFollowedBy[1]))
 				}
-				if i > 0 && i < bytesLen && mustBeFollowedByPairs[text[i-1]] < 1 {
+				if i > 0 && i < runesLen && mustBeFollowedByPairs[runes[i-1]] < 1 {
 					return errors.New("the char: " + string(v) + ", must be followed with at least one of these characters: " + string(cond.MustBeFollowedBy[1]))
 				}
-				if (i+1) < bytesLen && mustBeFollowedByPairs[text[i+1]] < 1 {
+				if (i+1) < runesLen && mustBeFollowedByPairs[runes[i+1]] < 1 {
 					return errors.New("the char: " + string(v) + ", must be followed with at least one of these characters: " + string(cond.MustBeFollowedBy[1]))
 				}
 			}
@@ -132,7 +162,7 @@ func Bytes(text []byte, cond *BytesCondition) error {
 		if cond.MustContains != nil || cond.MustContainsOnce != nil {
 			for b, v := range mustContains {
 				if v > 0 {
-					return errors.New("the bytes must contain char: " + string(byte(b)))
+					return errors.New("the string must contain char: " + string(rune(b)))
 				}
 			}
 		}

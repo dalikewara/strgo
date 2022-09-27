@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-func BenchmarkBytes(b *testing.B) {
+func BenchmarkByte(b *testing.B) {
 	bt := []byte("akdjfnafjweifwef..,./'91840jsafnkafkabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321awjdbjwfjhabfjwqbfjebfawkhfiuqwuqwqmlksmANXMASNBFIQWHFDIQWDQWIJODFWQHFIWQHEU12Y431U4IU4O12KJEN2JEHIO2UEJSBasbfkjaenfkqnefkehmdqwdiwqbrwqbrjwqkdfwqfjwqnfqehriquhrqwnrwoqrwoqdqwohiwoqjewoqihewqu")
-	strgo.Bytes([]byte("Loremipsumd+olorsitamet.consectetur@adipiscingelit.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliqua.Utenimadminimveniam.quisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequat.Duisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariatur.Excepteursintoccaecatcupidatatnonproident.suntinculpaquiofficiadeseruntmollitanimidestlaborum"), &strgo.BytesCondition{
+	strgo.Byte("Loremipsumd+olorsitamet.consectetur@adipiscingelit.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliqua.Utenimadminimveniam.quisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequat.Duisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariatur.Excepteursintoccaecatcupidatatnonproident.suntinculpaquiofficiadeseruntmollitanimidestlaborum", &strgo.ByteCondition{
 		OnlyContains:          append(bt, strgo.SpecialCharsByte...),
 		OnlyContainsPrefix:    bt,
 		OnlyContainsSuffix:    bt,
@@ -25,32 +25,32 @@ func BenchmarkBytes(b *testing.B) {
 	})
 }
 
-func BenchmarkBytesUsername(b *testing.B) {
-	strgo.Bytes([]byte("john_doe.123"), &strgo.BytesCondition{
+func BenchmarkByteUsername(b *testing.B) {
+	strgo.Byte("john_doe.123", &strgo.ByteCondition{
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
 		MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
 		MayContainsOnce:  []byte{'_', '.'},
 	})
 }
 
-func BenchmarkBytesUsernameLongText(b *testing.B) {
-	strgo.Bytes([]byte("Loremipsumdolorsitametconse_ct.eturadipiscingelitabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliquaUtenimadminimveniamquisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequatDuisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariaturExcepteursintoccaecatcupidatatnonproidentsuntinculpaquiofficiadeseruntmollitanimidestlaborum"), &strgo.BytesCondition{
+func BenchmarkByteUsernameLongText(b *testing.B) {
+	strgo.Byte("Loremipsumdolorsitametconse_ct.eturadipiscingelitabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliquaUtenimadminimveniamquisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequatDuisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariaturExcepteursintoccaecatcupidatatnonproidentsuntinculpaquiofficiadeseruntmollitanimidestlaborum", &strgo.ByteCondition{
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
 		MustBeFollowedBy: [2][]byte{{'_', '.'}, strgo.AlphanumericByte},
 		MayContainsOnce:  []byte{'_', '.'},
 	})
 }
 
-func BenchmarkBytesEmail(b *testing.B) {
-	strgo.Bytes([]byte("john+doe123@email"), &strgo.BytesCondition{
+func BenchmarkByteEmail(b *testing.B) {
+	strgo.Byte("john+doe123@email", &strgo.ByteCondition{
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
 		MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
 		MustContainsOnce: []byte{'@'},
 	})
 }
 
-func BenchmarkBytesEmailLongText(b *testing.B) {
-	strgo.Bytes([]byte("Loremipsumd+olorsitamet.consectetur@adipiscingelit.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliquaUtenimadminimveniamquisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequatDuisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariaturExcepteursintoccaecatcupidatatnonproidentsuntinculpaquiofficiadeseruntmollitanimidestlaborum"), &strgo.BytesCondition{
+func BenchmarkByteEmailLongText(b *testing.B) {
+	strgo.Byte("Loremipsumd+olorsitamet.consectetur@adipiscingelit.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliquaUtenimadminimveniamquisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequatDuisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariaturExcepteursintoccaecatcupidatatnonproidentsuntinculpaquiofficiadeseruntmollitanimidestlaborum", &strgo.ByteCondition{
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
 		MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
 		MustContainsOnce: []byte{'@'},
@@ -105,7 +105,7 @@ func TestElapsedTime(t *testing.T) {
 	// bytes
 
 	start := time.Now()
-	err := strgo.Bytes([]byte(text), &strgo.BytesCondition{
+	err := strgo.Byte(text, &strgo.ByteCondition{
 		OnlyContains:          append(text2Byte, strgo.SpecialCharsByte...),
 		OnlyContainsPrefix:    text2Byte,
 		OnlyContainsSuffix:    text2Byte,
@@ -121,7 +121,7 @@ func TestElapsedTime(t *testing.T) {
 	log.Printf("strgo bytes 					%s %v", elapsed, err)
 
 	start = time.Now()
-	err = strgo.Bytes([]byte("john_doe.123"), &strgo.BytesCondition{
+	err = strgo.Byte("john_doe.123", &strgo.ByteCondition{
 		MinLength:        3,
 		MaxLength:        20,
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
@@ -132,7 +132,7 @@ func TestElapsedTime(t *testing.T) {
 	log.Printf("strgo bytes username (john_doe.123) 		%s %v", elapsed, err)
 
 	start = time.Now()
-	err = strgo.Bytes([]byte("john+doe123@email"), &strgo.BytesCondition{
+	err = strgo.Byte("john+doe123@email", &strgo.ByteCondition{
 		MinLength:        4,
 		MaxLength:        255,
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),

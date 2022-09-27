@@ -6,159 +6,159 @@ import (
 	"testing"
 )
 
-func TestBytes_MinLength(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MinLength(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MinLength: 7,
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MinLength: 8,
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes length cannot be less than 8")
+	assert.EqualError(t, err, "the string length cannot be less than 8")
 }
 
-func TestBytes_MaxLength(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MaxLength(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MaxLength: 7,
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MaxLength: 6,
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes length cannot be more than 6")
+	assert.EqualError(t, err, "the string length cannot be more than 6")
 }
 
-func TestBytes_OnlyContains(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_OnlyContains(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		OnlyContains: []byte{'j', 'o', 'h', 'n', 'd', 'e'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		OnlyContains: []byte{'j', 'o', 'h', 'n', 'd'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes cannot contain char: e")
+	assert.EqualError(t, err, "the string cannot contain char: e")
 }
 
-func TestBytes_OnlyContainsPrefix(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_OnlyContainsPrefix(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		OnlyContainsPrefix: []byte{'o', 'j'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		OnlyContainsPrefix: []byte{'o', 'k'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes cannot contain prefix char: j")
+	assert.EqualError(t, err, "the string cannot contain prefix char: j")
 }
 
-func TestBytes_OnlyContainsSuffix(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_OnlyContainsSuffix(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		OnlyContainsSuffix: []byte{'o', 'e'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		OnlyContainsSuffix: []byte{'o', 'k'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes cannot contain suffix char: e")
+	assert.EqualError(t, err, "the string cannot contain suffix char: e")
 }
 
-func TestBytes_MustContains(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MustContains(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustContains: []byte{'n', 'h'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustContains: []byte{'n', 'k'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes must contain char: k")
+	assert.EqualError(t, err, "the string must contain char: k")
 }
 
-func TestBytes_MustContainsOnce(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MustContainsOnce(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustContainsOnce: []byte{'n', 'h'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustContainsOnce: []byte{'n', 'd', 'h', 'k'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes must contain char: k")
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	assert.EqualError(t, err, "the string must contain char: k")
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustContainsOnce: []byte{'n', 'o'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the char: o, must be appeared once in the bytes")
+	assert.EqualError(t, err, "the char: o, must be appeared once in the string")
 }
 
-func TestBytes_MustNotContains(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MustNotContains(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustNotContains: []byte{'k', 'r'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustNotContains: []byte{'k', 'e'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes must not contain char: e")
+	assert.EqualError(t, err, "the string must not contain char: e")
 }
 
-func TestBytes_MustNotContainsPrefix(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MustNotContainsPrefix(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustNotContainsPrefix: []byte{'o', 'h'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustNotContainsPrefix: []byte{'o', 'j'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes must not contain prefix: j")
+	assert.EqualError(t, err, "the string must not contain prefix: j")
 }
 
-func TestBytes_MustNotContainsSuffix(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MustNotContainsSuffix(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustNotContainsSuffix: []byte{'o', 'h'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustNotContainsSuffix: []byte{'o', 'e'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the bytes must not contain suffix: e")
+	assert.EqualError(t, err, "the string must not contain suffix: e")
 }
 
-func TestBytes_MayContainsOnce(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MayContainsOnce(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MayContainsOnce: []byte{'k', 'r', 'h', 'n', 'j', 'd'},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MayContainsOnce: []byte{'k', 'o'},
 	})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the char: o, must be appeared once in the bytes")
+	assert.EqualError(t, err, "the char: o, must be appeared once in the string")
 }
 
-func TestBytes_MustBeFollowedBy(t *testing.T) {
-	err := strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+func TestByte_MustBeFollowedBy(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustBeFollowedBy: [2][]byte{{'h', 'd'}, {'m', 'n', 'o'}},
 	})
 	assert.Nil(t, err)
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustBeFollowedBy: [2][]byte{{'o', 'd'}, {'e', 'o', 'd', 'j', 'h'}},
 	})
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "the char: d, must be followed with at least one of these characters: eodjh")
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustBeFollowedBy: [2][]byte{{'h', 'o'}, {'d', 'k', 'l'}},
 	})
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "the char: o, must be followed with at least one of these characters: dkl")
-	err = strgo.Bytes([]byte("johndoe"), &strgo.BytesCondition{
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustBeFollowedBy: [2][]byte{{'h', 'o'}, {'d', 'k', 'j'}},
 	})
 	assert.NotNil(t, err)
@@ -171,10 +171,10 @@ func TestUsername(t *testing.T) {
 		- its length must be greater than 2 and not more than 20
 		- special character must be followed by at least one alphanumeric character
 		- prefix and suffix cannot be a special character
-		- allowed special characters must be appeared once in the bytes
+		- allowed special characters must be appeared once in the string
 	*/
 	var validate = func(username string) error {
-		return strgo.Bytes([]byte(username), &strgo.BytesCondition{
+		return strgo.Byte(username, &strgo.ByteCondition{
 			MinLength:        3,
 			MaxLength:        20,
 			OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.'}...),
@@ -238,10 +238,10 @@ func TestEmail(t *testing.T) {
 		- its length must be greater than 3 and not more than 255
 		- special character must be followed by at least one alphanumeric character
 		- prefix and suffix cannot be a special character
-		- must contain char @ and must be appeared once in the bytes
+		- must contain char @ and must be appeared once in the string
 	*/
 	var validate = func(email string) error {
-		return strgo.Bytes([]byte(email), &strgo.BytesCondition{
+		return strgo.Byte(email, &strgo.ByteCondition{
 			MinLength:        4,
 			MaxLength:        255,
 			OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
