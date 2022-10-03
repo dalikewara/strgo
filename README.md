@@ -38,7 +38,6 @@ func validate(username string) error {
         MayContainsOnce:  []byte{'_', '.'},
     })
 }
-
 validate("johndoe") // valid
 validate("john_doe") // valid
 validate("john.doe") // valid
@@ -65,7 +64,7 @@ validate("joh_nd_oe") // not valid
 validate("joh.nd.oe") // not valid
 ```
 
-...and this is an example to validate an `email` string:
+...this is an example to validate an `email` string:
 
 - `email` can only contain alphanumeric characters and these special characters: `_.-@+`
 - its length must be greater than 3 and not more than 255
@@ -99,6 +98,31 @@ validate("johndoe123@email.") // not valid
 validate("johndoe123@") // not valid
 validate("john_.doe123@email") // not valid
 validate("johndoe123.@email") // not valid
+```
+
+...and this is an example to validate a `password` string:
+
+- `password` can only contain alphanumeric characters and special characters: !"#$% &'()*+,-./:;<=>?@[\]^_`{|}~
+- its length must be greater than 5 and not more than 32
+- at least contain one lower and upper case letter, one number and one special character
+
+```go
+func validate(password string) error {
+    return strgo.Byte(password, &strgo.ByteCondition{
+        MinLength:                   6,
+        MaxLength:                   32,
+        OnlyContains:                strgo.CharsByte,
+        AtLeastHaveUpperLetterCount: 1,
+        AtLeastHaveLowerLetterCount: 1,
+        AtLeastHaveNumberCount:      1,
+        AtLeastHaveSpecialCharCount: 1,
+    })
+}
+validate("J()hndoe123") // valid
+validate("John_doe123") // valid
+validate("johndoe") // not valid
+validate("johndoe123") // not valid
+validate("Johndoe123") // not valid
 ```
 
 ## Release

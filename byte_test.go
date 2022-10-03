@@ -131,18 +131,6 @@ func TestByte_MustNotContainsSuffix(t *testing.T) {
 	assert.EqualError(t, err, "the string must not contain suffix: e")
 }
 
-func TestByte_MayContainsOnce(t *testing.T) {
-	err := strgo.Byte("johndoe", &strgo.ByteCondition{
-		MayContainsOnce: []byte{'k', 'r', 'h', 'n', 'j', 'd'},
-	})
-	assert.Nil(t, err)
-	err = strgo.Byte("johndoe", &strgo.ByteCondition{
-		MayContainsOnce: []byte{'k', 'o'},
-	})
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "the char: o, must be appeared once in the string")
-}
-
 func TestByte_MustBeFollowedBy(t *testing.T) {
 	err := strgo.Byte("johndoe", &strgo.ByteCondition{
 		MustBeFollowedBy: [2][]byte{{'h', 'd'}, {'m', 'n', 'o'}},
@@ -163,6 +151,66 @@ func TestByte_MustBeFollowedBy(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "the char: o, must be followed with at least one of these characters: dkj")
+}
+
+func TestByte_AtLeastHaveUpperLetterCount(t *testing.T) {
+	err := strgo.Byte("JoHndoe", &strgo.ByteCondition{
+		AtLeastHaveUpperLetterCount: 1,
+	})
+	assert.Nil(t, err)
+	err = strgo.Byte("joHndoe", &strgo.ByteCondition{
+		AtLeastHaveUpperLetterCount: 2,
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the string must have at least 2 upper case letter(s)")
+}
+
+func TestByte_AtLeastHaveLowerLetterCount(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
+		AtLeastHaveLowerLetterCount: 1,
+	})
+	assert.Nil(t, err)
+	err = strgo.Byte("JOHNDoE", &strgo.ByteCondition{
+		AtLeastHaveLowerLetterCount: 2,
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the string must have at least 2 lower case letter(s)")
+}
+
+func TestByte_AtLeastHaveNumberCount(t *testing.T) {
+	err := strgo.Byte("johndoe123", &strgo.ByteCondition{
+		AtLeastHaveNumberCount: 1,
+	})
+	assert.Nil(t, err)
+	err = strgo.Byte("johndoe456", &strgo.ByteCondition{
+		AtLeastHaveNumberCount: 4,
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the string must have at least 4 number(s)")
+}
+
+func TestByte_AtLeastHaveSpecialCharCount(t *testing.T) {
+	err := strgo.Byte("john_doe", &strgo.ByteCondition{
+		AtLeastHaveSpecialCharCount: 1,
+	})
+	assert.Nil(t, err)
+	err = strgo.Byte("john_doe", &strgo.ByteCondition{
+		AtLeastHaveSpecialCharCount: 2,
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the string must have at least 2 special char(s)")
+}
+
+func TestByte_MayContainsOnce(t *testing.T) {
+	err := strgo.Byte("johndoe", &strgo.ByteCondition{
+		MayContainsOnce: []byte{'k', 'r', 'h', 'n', 'j', 'd'},
+	})
+	assert.Nil(t, err)
+	err = strgo.Byte("johndoe", &strgo.ByteCondition{
+		MayContainsOnce: []byte{'k', 'o'},
+	})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "the char: o, must be appeared once in the string")
 }
 
 func TestUsername(t *testing.T) {
@@ -280,5 +328,34 @@ func TestEmail(t *testing.T) {
 	err = validate("john_.doe123@email")
 	assert.NotNil(t, err)
 	err = validate("johndoe123.@email")
+	assert.NotNil(t, err)
+}
+
+func TestPassword(t *testing.T) {
+	/*
+		- `password` can only contain alphanumeric characters and special characters: !"#$% &'()*+,-./:;<=>?@[\]^_`{|}~
+		- its length must be greater than 5 and not more than 32
+		- at least contain one lower and upper case letter, one number and one special character
+	*/
+	var validate = func(password string) error {
+		return strgo.Byte(password, &strgo.ByteCondition{
+			MinLength:                   6,
+			MaxLength:                   32,
+			OnlyContains:                strgo.CharsByte,
+			AtLeastHaveUpperLetterCount: 1,
+			AtLeastHaveLowerLetterCount: 1,
+			AtLeastHaveNumberCount:      1,
+			AtLeastHaveSpecialCharCount: 1,
+		})
+	}
+	err := validate("J()hndoe123")
+	assert.Nil(t, err)
+	err = validate("John_doe123")
+	assert.Nil(t, err)
+	err = validate("johndoe")
+	assert.NotNil(t, err)
+	err = validate("johndoe123")
+	assert.NotNil(t, err)
+	err = validate("Johndoe123")
 	assert.NotNil(t, err)
 }

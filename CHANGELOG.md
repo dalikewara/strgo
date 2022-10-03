@@ -2,6 +2,10 @@
 
 ### 2022
 
+- v1.7.0 (2022-10-04)
+  - add `ByteCondition` properties: `AtLeastHaveUpperLetterCount`, `AtLeastHaveLowerLetterCount`, `AtLeastHaveNumberCount`, `AtLeastHaveSpecialCharCount`
+  - add some char bytes
+
 - v1.6.0 - v1.6.2 (2022-09-27)
   - optimize `Byte` validate logic
   - change function `Bytes` to `Byte` and change its first param from `[]byte` to `string`

@@ -12,18 +12,22 @@ const asciiMaxDec = 127
 type asciis [asciiMaxLen]byte
 
 type ByteCondition struct {
-	MinLength             int
-	MaxLength             int
-	OnlyContains          []byte
-	OnlyContainsPrefix    []byte
-	OnlyContainsSuffix    []byte
-	MustContains          []byte
-	MustContainsOnce      []byte
-	MustNotContains       []byte
-	MustNotContainsPrefix []byte
-	MustNotContainsSuffix []byte
-	MayContainsOnce       []byte
-	MustBeFollowedBy      [2][]byte
+	MinLength                   int
+	MaxLength                   int
+	OnlyContains                []byte
+	OnlyContainsPrefix          []byte
+	OnlyContainsSuffix          []byte
+	MustContains                []byte
+	MustContainsOnce            []byte
+	MustNotContains             []byte
+	MustNotContainsPrefix       []byte
+	MustNotContainsSuffix       []byte
+	MustBeFollowedBy            [2][]byte
+	MayContainsOnce             []byte
+	AtLeastHaveUpperLetterCount int
+	AtLeastHaveLowerLetterCount int
+	AtLeastHaveNumberCount      int
+	AtLeastHaveSpecialCharCount int
 }
 
 // Byte matches the string based on the ByteCondition.
@@ -55,6 +59,10 @@ func Byte(text string, cond *ByteCondition) error {
 		mustBeFollowedBy,
 		mustBeFollowedByPairs,
 		mayContainsOnce asciis
+		atLeastHaveUpperLetterCount,
+		atLeastHaveLowerLetterCount,
+		atLeastHaveNumberCount,
+		atLeastHaveSpecialCharCount int
 	)
 
 	if cond.OnlyContains != nil {
@@ -88,6 +96,10 @@ func Byte(text string, cond *ByteCondition) error {
 		setASCIICond(&mustBeFollowedBy, &cond.MustBeFollowedBy[0])
 		setASCIICond(&mustBeFollowedByPairs, &cond.MustBeFollowedBy[1])
 	}
+	atLeastHaveUpperLetterCount = cond.AtLeastHaveUpperLetterCount
+	atLeastHaveLowerLetterCount = cond.AtLeastHaveLowerLetterCount
+	atLeastHaveNumberCount = cond.AtLeastHaveNumberCount
+	atLeastHaveSpecialCharCount = cond.AtLeastHaveSpecialCharCount
 
 	textLenMaxIndex := textLen - 1
 
@@ -137,6 +149,18 @@ func Byte(text string, cond *ByteCondition) error {
 				return errors.New("the char: " + string(v) + ", must be followed with at least one of these characters: " + string(cond.MustBeFollowedBy[1]))
 			}
 		}
+		if atLeastHaveUpperLetterCount > 0 && (v >= 'A' && v <= 'Z') {
+			atLeastHaveUpperLetterCount -= 1
+		}
+		if atLeastHaveLowerLetterCount > 0 && (v >= 'a' && v <= 'z') {
+			atLeastHaveLowerLetterCount -= 1
+		}
+		if atLeastHaveNumberCount > 0 && (v >= '0' && v <= '9') {
+			atLeastHaveNumberCount -= 1
+		}
+		if atLeastHaveSpecialCharCount > 0 && (v < 'A' || v > 'Z') && (v < 'a' || v > 'z') && (v < '0' || v > '9') {
+			atLeastHaveSpecialCharCount -= 1
+		}
 	}
 	if cond.MustContains != nil || cond.MustContainsOnce != nil {
 		for b, v := range mustContains {
@@ -144,6 +168,18 @@ func Byte(text string, cond *ByteCondition) error {
 				return errors.New("the string must contain char: " + string(rune(b)))
 			}
 		}
+	}
+	if atLeastHaveUpperLetterCount > 0 {
+		return errors.New("the string must have at least " + strconv.Itoa(cond.AtLeastHaveUpperLetterCount) + " upper case letter(s)")
+	}
+	if atLeastHaveLowerLetterCount > 0 {
+		return errors.New("the string must have at least " + strconv.Itoa(cond.AtLeastHaveLowerLetterCount) + " lower case letter(s)")
+	}
+	if atLeastHaveNumberCount > 0 {
+		return errors.New("the string must have at least " + strconv.Itoa(cond.AtLeastHaveNumberCount) + " number(s)")
+	}
+	if atLeastHaveSpecialCharCount > 0 {
+		return errors.New("the string must have at least " + strconv.Itoa(cond.AtLeastHaveSpecialCharCount) + " special char(s)")
 	}
 
 	return nil
