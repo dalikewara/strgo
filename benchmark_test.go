@@ -12,16 +12,20 @@ import (
 func BenchmarkByte(b *testing.B) {
 	bt := []byte("akdjfnafjweifwef..,./'91840jsafnkafkabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321awjdbjwfjhabfjwqbfjebfawkhfiuqwuqwqmlksmANXMASNBFIQWHFDIQWDQWIJODFWQHFIWQHEU12Y431U4IU4O12KJEN2JEHIO2UEJSBasbfkjaenfkqnefkehmdqwdiwqbrwqbrjwqkdfwqfjwqnfqehriquhrqwnrwoqrwoqdqwohiwoqjewoqihewqu")
 	strgo.Byte("Loremipsumd+olorsitamet.consectetur@adipiscingelit.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliqua.Utenimadminimveniam.quisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequat.Duisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariatur.Excepteursintoccaecatcupidatatnonproident.suntinculpaquiofficiadeseruntmollitanimidestlaborum", &strgo.ByteCondition{
-		OnlyContains:          append(bt, strgo.SpecialCharsByte...),
-		OnlyContainsPrefix:    bt,
-		OnlyContainsSuffix:    bt,
-		MustContains:          strgo.AlphanumericByte,
-		MustContainsOnce:      []byte{'+'},
-		MustNotContains:       strgo.BracketsByte,
-		MustNotContainsPrefix: strgo.SpecialCharsByte,
-		MustNotContainsSuffix: strgo.SpecialCharsByte,
-		MayContainsOnce:       []byte{'+'},
-		MustBeFollowedBy:      [2][]byte{strgo.SpecialCharsByte, strgo.CharsByte},
+		OnlyContains:                append(bt, strgo.SpecialCharsByte...),
+		OnlyContainsPrefix:          bt,
+		OnlyContainsSuffix:          bt,
+		MustContains:                strgo.AlphanumericByte,
+		MustContainsOnce:            []byte{'+'},
+		MustNotContains:             strgo.BracketsByte,
+		MustNotContainsPrefix:       strgo.SpecialCharsByte,
+		MustNotContainsSuffix:       strgo.SpecialCharsByte,
+		MayContainsOnce:             []byte{'+'},
+		MustBeFollowedBy:            [2][]byte{strgo.SpecialCharsByte, strgo.CharsByte},
+		AtLeastHaveUpperLetterCount: 2,
+		AtLeastHaveLowerLetterCount: 2,
+		AtLeastHaveNumberCount:      2,
+		AtLeastHaveSpecialCharCount: 2,
 	})
 }
 
@@ -54,6 +58,26 @@ func BenchmarkByteEmailLongText(b *testing.B) {
 		OnlyContains:     append(strgo.AlphanumericByte, []byte{'_', '.', '@', '-', '+'}...),
 		MustBeFollowedBy: [2][]byte{{'_', '.', '@', '-', '+'}, strgo.AlphanumericByte},
 		MustContainsOnce: []byte{'@'},
+	})
+}
+
+func BenchmarkBytePassword(b *testing.B) {
+	strgo.Byte("john_DOe.123", &strgo.ByteCondition{
+		OnlyContains:                strgo.CharsByte,
+		AtLeastHaveUpperLetterCount: 2,
+		AtLeastHaveLowerLetterCount: 2,
+		AtLeastHaveNumberCount:      2,
+		AtLeastHaveSpecialCharCount: 2,
+	})
+}
+
+func BenchmarkBytePasswordLongText(b *testing.B) {
+	strgo.Byte("Loremipsumdolorsitametconse_ct.eturadipiscingelitabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliquaUtenimadminimveniamquisnostrudexercitationullamcolaborisnisiutaliquipexeacommodoconsequatDuisauteiruredolorinreprehenderitinvoluptatevelitessecillumdoloreeufugiatnullapariaturExcepteursintoccaecatcupidatatnonproidentsuntinculpaquiofficiadeseruntmollitanimidestlaborum", &strgo.ByteCondition{
+		OnlyContains:                strgo.CharsByte,
+		AtLeastHaveUpperLetterCount: 2,
+		AtLeastHaveLowerLetterCount: 2,
+		AtLeastHaveNumberCount:      2,
+		AtLeastHaveSpecialCharCount: 2,
 	})
 }
 
@@ -106,16 +130,20 @@ func TestElapsedTime(t *testing.T) {
 
 	start := time.Now()
 	err := strgo.Byte(text, &strgo.ByteCondition{
-		OnlyContains:          append(text2Byte, strgo.SpecialCharsByte...),
-		OnlyContainsPrefix:    text2Byte,
-		OnlyContainsSuffix:    text2Byte,
-		MustContains:          strgo.AlphanumericByte,
-		MustContainsOnce:      []byte{'+'},
-		MustNotContains:       strgo.BracketsByte,
-		MustNotContainsPrefix: strgo.SpecialCharsByte,
-		MustNotContainsSuffix: strgo.SpecialCharsByte,
-		MayContainsOnce:       []byte{'+'},
-		MustBeFollowedBy:      [2][]byte{strgo.SpecialCharsByte, strgo.CharsByte},
+		OnlyContains:                append(text2Byte, strgo.SpecialCharsByte...),
+		OnlyContainsPrefix:          text2Byte,
+		OnlyContainsSuffix:          text2Byte,
+		MustContains:                strgo.AlphanumericByte,
+		MustContainsOnce:            []byte{'+'},
+		MustNotContains:             strgo.BracketsByte,
+		MustNotContainsPrefix:       strgo.SpecialCharsByte,
+		MustNotContainsSuffix:       strgo.SpecialCharsByte,
+		MayContainsOnce:             []byte{'+'},
+		MustBeFollowedBy:            [2][]byte{strgo.SpecialCharsByte, strgo.CharsByte},
+		AtLeastHaveUpperLetterCount: 2,
+		AtLeastHaveLowerLetterCount: 2,
+		AtLeastHaveNumberCount:      2,
+		AtLeastHaveSpecialCharCount: 2,
 	})
 	elapsed := time.Since(start)
 	log.Printf("strgo bytes 					%s %v", elapsed, err)
@@ -141,6 +169,17 @@ func TestElapsedTime(t *testing.T) {
 	})
 	elapsed = time.Since(start)
 	log.Printf("strgo bytes email (john+doe123@email) 		%s %v", elapsed, err)
+
+	start = time.Now()
+	err = strgo.Byte("John_Doe.123", &strgo.ByteCondition{
+		OnlyContains:                strgo.CharsByte,
+		AtLeastHaveUpperLetterCount: 2,
+		AtLeastHaveLowerLetterCount: 2,
+		AtLeastHaveNumberCount:      2,
+		AtLeastHaveSpecialCharCount: 2,
+	})
+	elapsed = time.Since(start)
+	log.Printf("strgo bytes password (John_Doe.123) 		%s %v", elapsed, err)
 
 	// string
 
